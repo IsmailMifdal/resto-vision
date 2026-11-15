@@ -1,0 +1,35 @@
+import { HttpClient } from '@angular/common/http';
+import { Injectable, inject } from '@angular/core';
+import { Observable } from 'rxjs';
+import { API_URL } from './config';
+import { Alert, AlertRule, Session, Stats, Zone } from './models';
+
+@Injectable({ providedIn: 'root' })
+export class ApiService {
+  private readonly http = inject(HttpClient);
+
+  login(email: string, password: string): Observable<Session> {
+    return this.http.post<Session>(`${API_URL}/auth/login`, { email, password });
+  }
+  zones(): Observable<Zone[]> {
+    return this.http.get<Zone[]>(`${API_URL}/zones`);
+  }
+  alerts(): Observable<Alert[]> {
+    return this.http.get<Alert[]>(`${API_URL}/alerts`);
+  }
+  acknowledge(id: string): Observable<Alert> {
+    return this.http.post<Alert>(`${API_URL}/alerts/${id}/ack`, {});
+  }
+  rules(): Observable<AlertRule[]> {
+    return this.http.get<AlertRule[]>(`${API_URL}/alert-rules`);
+  }
+  updateRule(rule: AlertRule): Observable<AlertRule> {
+    return this.http.put<AlertRule>(`${API_URL}/alert-rules/${rule.id}`, {
+      threshold: rule.threshold,
+      enabled: rule.enabled,
+    });
+  }
+  stats(): Observable<Stats> {
+    return this.http.get<Stats>(`${API_URL}/stats/today`);
+  }
+}

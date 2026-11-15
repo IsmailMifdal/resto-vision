@@ -1,0 +1,26 @@
+spring:
+  application:
+    name: restovision-backend
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/restovision}
+    username: ${DB_USER:restovision}
+    password: ${DB_PASSWORD:restovision}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: update   # pratique au début ; à remplacer par Flyway avant la production
+
+restovision:
+  timezone: Europe/Paris
+  jwt:
+    secret: ${JWT_SECRET:dev-only-secret-change-me-in-production-0123456789}
+  mqtt:
+    enabled: ${MQTT_ENABLED:true}
+    url: ${MQTT_URL:tcp://localhost:1883}
+    topic: restovision/+/events
+  cors:
+    allowed-origins: ${CORS_ORIGINS:http://localhost:4200}
+  alerts:
+    check-interval-ms: 5000
+  demo:
+    enabled: ${DEMO_DATA:true}   # crée le restaurant "demo" et un compte de test

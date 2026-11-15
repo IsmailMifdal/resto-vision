@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+# Modèles et vidéos : jamais dans Git (poids, et images de vraies personnes)
+*.pt
+*.onnx
+*.mp4
+*.avi
+edge/config/edge.json
+# Java
+backend/target/
+# Web
+web/node_modules/
+web/dist/
+web/.angular/
+# Divers
+.env
+.idea/
+.vscode/
+.DS_Store

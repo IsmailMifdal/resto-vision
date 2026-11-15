@@ -1,0 +1,6 @@
+# Coeur (suffisant pour le simulateur et les tests)
+paho-mqtt>=2.1
+pytest>=8.0
+# Vision (nécessaire seulement avec une vraie caméra ou une vidéo)
+ultralytics>=8.3
+opencv-python-headless>=4.10

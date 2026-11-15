@@ -1,0 +1,14 @@
+@if (sessions.session(); as session) {
+  <header>
+    <strong>{{ session.restaurantName }}</strong>
+    <nav>
+      <a routerLink="/salle" routerLinkActive="active">Salle</a>
+      <a routerLink="/gerant" routerLinkActive="active">Gérant</a>
+      <a routerLink="/a-venir" routerLinkActive="active">À venir</a>
+    </nav>
+    <button (click)="logout()">Déconnexion</button>
+  </header>
+}
+<main>
+  <router-outlet />
+</main>

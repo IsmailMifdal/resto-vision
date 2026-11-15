@@ -1,0 +1,13 @@
+header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding: 0.7rem 1rem;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+nav { display: flex; gap: 0.25rem; flex: 1; }
+nav a { white-space: nowrap; padding: 0.35rem 0.7rem; border-radius: 8px; color: var(--text); text-decoration: none; }
+nav a.active { background: var(--empty); color: var(--empty-ink); font-weight: 600; }
+main { max-width: 1000px; margin: 0 auto; padding: 1.25rem 1rem 3rem; }
