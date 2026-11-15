@@ -21,6 +21,7 @@ class EdgeConfig:
     weights: str = "yolo11n.pt"
     confidence: float = 0.35
     fps: float = 5.0
+    imgsz: int = 1280  # taille d'analyse : 640 est rapide mais rate la vaisselle vue de loin
     extra: dict = field(default_factory=dict)
 
     @property
@@ -31,7 +32,8 @@ class EdgeConfig:
 def load_config(path: str | Path) -> EdgeConfig:
     raw = json.loads(Path(path).read_text(encoding="utf-8"))
     mqtt, model = raw.get("mqtt", {}), raw.get("model", {})
-    zones = [Zone(z["id"], z["type"], tuple(tuple(p) for p in z["polygon"])) for z in raw["zones"]]
+    zones = [Zone(z["id"], z["type"], tuple(tuple(p) for p in z["polygon"]), int(z.get("baselineDishes", 0)))
+             for z in raw["zones"]]
     return EdgeConfig(
         restaurant_id=raw["restaurantId"],
         zones=zones,
@@ -44,4 +46,5 @@ def load_config(path: str | Path) -> EdgeConfig:
         weights=model.get("weights", "yolo11n.pt"),
         confidence=model.get("confidence", 0.35),
         fps=model.get("fps", 5.0),
+        imgsz=model.get("imgsz", 1280),
     )

@@ -1,7 +1,7 @@
 {
   "restaurantId": "demo",
   "mqtt": { "host": "localhost", "port": 1883, "topicPrefix": "restovision" },
-  "model": { "weights": "yolo11n.pt", "confidence": 0.35, "fps": 5 },
+  "model": { "weights": "yolo11n.pt", "confidence": 0.35, "fps": 5, "imgsz": 1280 },
   "labels": {
     "person": ["person"],
     "dish": ["cup", "bowl", "wine glass", "bottle", "fork", "knife", "spoon", "pizza", "sandwich", "cake"]
@@ -9,7 +9,7 @@
   "stableSeconds": 5,
   "queue": { "secondsPerCustomer": 90 },
   "zones": [
-    { "id": "T1", "type": "TABLE", "polygon": [[100, 300], [400, 300], [400, 600], [100, 600]] },
+    { "id": "T1", "type": "TABLE", "baselineDishes": 0, "polygon": [[100, 300], [400, 300], [400, 600], [100, 600]] },
     { "id": "T2", "type": "TABLE", "polygon": [[500, 300], [800, 300], [800, 600], [500, 600]] },
     { "id": "Q1", "type": "QUEUE", "polygon": [[900, 100], [1200, 100], [1200, 700], [900, 700]] }
   ]

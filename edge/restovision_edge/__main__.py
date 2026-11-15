@@ -18,12 +18,24 @@ def main() -> None:
                         help="simulateur : 1 = temps réel (requis pour tester les alertes), 0 = sans pause")
     parser.add_argument("--cycles", type=int, default=0, help="simulateur : nombre de cycles (0 = sans fin)")
     parser.add_argument("--cycle-seconds", type=float, default=240.0, help="simulateur : durée d'un cycle de table")
+    parser.add_argument("--realtime", action="store_true",
+                        help="fichier vidéo : le rejouer à vitesse réelle, comme une caméra (pour une démonstration)")
+    parser.add_argument("--loop", action="store_true", help="fichier vidéo : le rejouer sans fin")
+    parser.add_argument("--preview", metavar="FICHIER.mp4", help="enregistrer l'image annotée (zones et états)")
+    parser.add_argument("--preview-port", type=int, metavar="PORT",
+                        help="voir l'image annotée en direct sur http://127.0.0.1:PORT (reste sur ce poste)")
+    parser.add_argument("--calibrate", type=float, metavar="SECONDES", default=0,
+                        help="salle dressée et vide : mesurer la vaisselle de chaque table, puis s'arrêter")
     args = parser.parse_args()
 
     config = load_config(args.config)
+    if args.calibrate:
+        calibrate(config, args.source, args.calibrate)
+        return
     pipeline = Pipeline(config)
     publisher = (MqttPublisher(config.mqtt_host, config.mqtt_port, config.topic)
                  if args.publisher == "mqtt" else StdoutPublisher())
+    views = []
     try:
         if args.source == "simulate":
             from .simulate import scenario
@@ -39,15 +51,57 @@ def main() -> None:
         else:
             from .detector import YoloDetector, frames
 
+            if args.preview or args.preview_port:
+                from .preview import LiveView, VideoFile, draw
+
+                if args.preview:
+                    views.append(VideoFile(args.preview, config.fps))
+                if args.preview_port:
+                    views.append(LiveView(args.preview_port))
+                    print(f"Aperçu en direct : http://127.0.0.1:{args.preview_port}", flush=True)
             labels = set().union(*config.groups.values())
-            detector = YoloDetector(config.weights, config.confidence, labels)
-            for frame, now in frames(args.source, config.fps):
-                for event in pipeline.process(detector.detect(frame), now):
+            detector = YoloDetector(config.weights, config.confidence, labels, config.imgsz)
+            for frame, now in frames(args.source, config.fps, realtime=args.realtime, loop=args.loop):
+                detections = detector.detect(frame)
+                for event in pipeline.process(detections, now):
                     publisher.publish(event)
+                if views:
+                    image = draw(frame, detections, pipeline.analyzers)
+                    for view in views:
+                        view.show(image)
     except KeyboardInterrupt:
         pass
     finally:
         publisher.close()
+        for view in views:
+            view.close()
+
+
+def calibrate(config, source: str, seconds: float) -> None:
+    """Mesure la vaisselle visible sur chaque table quand la salle est dressée et vide."""
+    from .analyzers.tables import DISH_SHARE
+    from .detector import YoloDetector, frames
+    from .smoothing import Window
+    from .zones import count_by_group, detections_in_zone
+
+    tables = [z for z in config.zones if z.type == "TABLE"]
+    windows = {z.id: Window(seconds) for z in tables}
+    detector = YoloDetector(config.weights, config.confidence, set().union(*config.groups.values()), config.imgsz)
+    start = now = None
+    for frame, now in frames(source, config.fps):
+        start = now if start is None else start
+        detections = detector.detect(frame)
+        for zone in tables:
+            windows[zone.id].add(now, count_by_group(detections_in_zone(zone, detections), config.groups).get("dish", 0))
+        if now - start >= seconds:
+            break
+    if start is None:
+        raise SystemExit("Aucune image lue.")
+    print('Valeurs à recopier dans la configuration ("baselineDishes" de chaque table) :')
+    for zone in tables:
+        window = windows[zone.id]
+        window.seconds = max(now - start, 1e-6)
+        print(f'  {zone.id} : "baselineDishes": {window.level(now, DISH_SHARE)}')
 
 
 if __name__ == "__main__":

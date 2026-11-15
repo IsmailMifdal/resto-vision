@@ -1,3 +1,5 @@
+import pytest
+
 from restovision_edge.analyzers.queue import QueueAnalyzer
 from restovision_edge.analyzers.tables import TableAnalyzer, classify
 from restovision_edge.config import load_config
@@ -5,6 +7,7 @@ from restovision_edge.models import Detection, Event, TableState, Zone
 from restovision_edge.pipeline import Pipeline
 from restovision_edge.publisher import MqttPublisher
 from restovision_edge.simulate import scenario
+from restovision_edge.smoothing import Window
 from restovision_edge.zones import point_in_polygon
 
 SQUARE = ((0, 0), (100, 0), (100, 100), (0, 100))
@@ -66,6 +69,57 @@ def test_person_outside_zone_is_ignored():
     table = TableAnalyzer("demo", ZONE, GROUPS, stable_seconds=0)
     assert table.process([person(500, 500)], 0) == []
     assert table.process([person(500, 500)], 1) == []
+
+
+def test_window_level_ignores_what_is_seen_too_briefly():
+    window = Window(10)
+    for now, value in [(0, 0), (2, 3), (4, 0), (10, 0)]:  # 3 personnes pendant 2 s sur 10
+        window.add(now, value)
+    assert window.level(10, 0.5) == 0
+    assert window.level(10, 0.2) == 3
+
+
+def test_table_stays_served_when_dishes_are_missed_on_most_frames():
+    table = TableAnalyzer("demo", ZONE, GROUPS, stable_seconds=5)
+    states = []
+    for tenth in range(0, 600):  # 60 s à 10 images/s, le verre n'est vu que 4 images sur 10
+        now = tenth / 10
+        detections = [person()] + ([cup()] if tenth % 10 < 4 else [])
+        states += [e.data["state"] for e in table.process(detections, now)]
+    assert states[-1] == "SERVED"
+    assert states.count("SERVED") == 1  # pas d'aller-retour entre « servie » et « en attente »
+
+
+def test_set_table_is_not_to_clear():
+    """Une table dressée (2 verres posés d'avance) est libre, pas à débarrasser."""
+    zone = Zone("T1", "TABLE", SQUARE, baseline_dishes=2)
+    table = TableAnalyzer("demo", zone, GROUPS, stable_seconds=5)
+    glasses = [cup(30, 60), cup(70, 60)]
+    seen = []
+    timeline = [(0, glasses), (10, glasses), (20, glasses + [person()]), (30, glasses + [person()]),
+                (40, glasses + [person(), cup(50, 40)]), (50, glasses + [person(), cup(50, 40)])]
+    for now, detections in timeline:
+        seen += [e.data["state"] for e in table.process(detections, now)]
+    assert seen == ["WAITING", "SERVED"]
+
+
+def test_config_reads_baseline_and_image_size(tmp_path):
+    path = tmp_path / "edge.json"
+    path.write_text('{"restaurantId": "r", "model": {"imgsz": 960}, "zones": '
+                    '[{"id": "T1", "type": "TABLE", "baselineDishes": 3, "polygon": [[0, 0], [1, 0], [1, 1]]}]}')
+    config = load_config(path)
+    assert config.imgsz == 960 and config.zones[0].baseline_dishes == 3
+
+
+def test_preview_draws_zones_on_a_copy():
+    np = pytest.importorskip("numpy")
+    pytest.importorskip("cv2")
+    from restovision_edge.preview import draw
+
+    config = load_config("config/edge.example.json")
+    frame = np.zeros((720, 1280, 3), dtype=np.uint8)
+    image = draw(frame, [person(200, 400)], Pipeline(config).analyzers)
+    assert image.shape == frame.shape and image.any() and not frame.any()
 
 
 def test_queue_count_and_wait():

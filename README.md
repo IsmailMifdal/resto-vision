@@ -13,7 +13,7 @@ caméras IP -> edge (Python, YOLO) --MQTT--> backend (Spring Boot) --WebSocket--
 
 | Dossier | Rôle | État |
 | --- | --- | --- |
-| `edge/` | Détection, zones, état des tables, file d'attente, simulateur | V1 codée, 10 tests |
+| `edge/` | Détection, zones, état des tables, file d'attente, aperçu annoté, simulateur | V1 codée, 15 tests |
 | `backend/` | API, ingestion MQTT, règles d'alerte, statistiques, JWT | V1 codée, tests lancés par la CI |
 | `web/` | Écran salle en direct, dashboard gérant | V1 codée |
 | `infra/` + `docker-compose.yml` | PostgreSQL (TimescaleDB), Mosquitto, backend | prêt |
@@ -52,6 +52,25 @@ cp config/edge.example.json config/edge.json     # puis dessiner les zones (coor
 python -m restovision_edge --config config/edge.json --source ma_video.mp4 --publisher mqtt
 # ou une caméra : --source rtsp://utilisateur:motdepasse@192.168.1.20/stream
 ```
+
+Options utiles avec une vidéo ou une caméra :
+
+| Option | Effet |
+| --- | --- |
+| `--preview-port 8090` | Image annotée en direct (zones, états) sur http://127.0.0.1:8090, visible seulement depuis ce poste |
+| `--preview apercu.mp4` | Enregistre l'image annotée dans un fichier |
+| `--realtime --loop` | Rejoue un fichier à vitesse réelle et sans fin, comme une caméra (démonstration) |
+| `--calibrate 20` | Salle dressée et vide : mesure 20 s la vaisselle de chaque table et affiche les `baselineDishes` à recopier |
+
+Réglages de `edge.json` à connaître :
+
+- `model.imgsz` (1280 par défaut) : taille d'analyse. En 640 l'analyse est 3 fois plus rapide mais la vaisselle
+  vue de loin n'est presque plus détectée.
+- `zones[].baselineDishes` : vaisselle d'une table dressée et libre (verres, couverts). Elle n'est pas comptée,
+  sinon une table dressée passerait « à débarrasser ».
+- `stableSeconds` : durée de la fenêtre de lissage. Une personne doit être vue la moitié de ce temps pour
+  compter (un serveur qui passe est ignoré), la vaisselle 30 % du temps.
+- Dessiner chaque zone de table **avec ses chaises** : une personne compte si le centre de sa boîte est dans la zone.
 
 Limite connue : le modèle YOLO de base ne connaît pas la classe « assiette ». Il repère verres, bols,
 couverts et bouteilles. Il faudra l'entraîner sur des images du restaurant pilote.
