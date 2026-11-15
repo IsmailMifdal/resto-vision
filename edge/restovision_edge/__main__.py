@@ -68,7 +68,7 @@ def main() -> None:
                 if views:
                     image = draw(frame, detections, pipeline.analyzers)
                     for view in views:
-                        view.show(image)
+                        view.show(image, frame)
     except KeyboardInterrupt:
         pass
     finally:

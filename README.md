@@ -15,7 +15,7 @@ caméras IP -> edge (Python, YOLO) --MQTT--> backend (Spring Boot) --WebSocket--
 | --- | --- | --- |
 | `edge/` | Détection, zones, état des tables, file d'attente, aperçu annoté, simulateur | V1 codée, 15 tests |
 | `backend/` | API, ingestion MQTT, règles d'alerte, statistiques, JWT | V1 codée, tests lancés par la CI |
-| `web/` | Écran salle en direct, dashboard gérant | V1 codée |
+| `web/` | Écran salle en direct, dashboard gérant, dessin des zones | V1 codée |
 | `infra/` + `docker-compose.yml` | PostgreSQL (TimescaleDB), Mosquitto, backend | prêt |
 
 Fonctionnalités réservées, pas encore codées : stock (caisse), anti-gaspillage, prédiction, rapport IA,
@@ -53,11 +53,18 @@ python -m restovision_edge --config config/edge.json --source ma_video.mp4 --pub
 # ou une caméra : --source rtsp://utilisateur:motdepasse@192.168.1.20/stream
 ```
 
+### Dessiner les zones
+
+Lancer le boîtier avec `--preview-port 8090`, puis ouvrir la page **Zones** de l'application web sur le même
+poste. « Depuis le boîtier » affiche l'image de la caméra : on y dessine chaque table (avec ses chaises) et la
+file d'attente, puis « Télécharger edge.json » donne le fichier à placer dans `edge/config/edge.json`.
+Un `edge.json` existant peut être rouvert pour être corrigé. L'image reste dans le navigateur.
+
 Options utiles avec une vidéo ou une caméra :
 
 | Option | Effet |
 | --- | --- |
-| `--preview-port 8090` | Image annotée en direct (zones, états) sur http://127.0.0.1:8090, visible seulement depuis ce poste |
+| `--preview-port 8090` | Image annotée en direct (zones, états) sur http://127.0.0.1:8090, visible seulement depuis ce poste. `/frame.jpg` donne l'image brute |
 | `--preview apercu.mp4` | Enregistre l'image annotée dans un fichier |
 | `--realtime --loop` | Rejoue un fichier à vitesse réelle et sans fin, comme une caméra (démonstration) |
 | `--calibrate 20` | Salle dressée et vide : mesure 20 s la vaisselle de chaque table et affiche les `baselineDishes` à recopier |

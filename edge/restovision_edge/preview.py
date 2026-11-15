@@ -57,7 +57,7 @@ class VideoFile:
     def __init__(self, path: str, fps: float):
         self.path, self.fps, self.writer = path, fps, None
 
-    def show(self, image) -> None:
+    def show(self, image, frame=None) -> None:
         import cv2
 
         if self.writer is None:
@@ -75,10 +75,12 @@ PAGE = b"""<!doctype html><meta charset="utf-8"><title>RestoVision - apercu</tit
 
 
 class LiveView:
-    """Sert l'aperçu en direct sur http://127.0.0.1:<port> (flux MJPEG et /snapshot.jpg)."""
+    """Sert l'aperçu en direct sur http://127.0.0.1:<port> : flux MJPEG, /snapshot.jpg (annotée)
+    et /frame.jpg (image brute, pour dessiner les zones dans l'application web)."""
 
     def __init__(self, port: int, host: str = "127.0.0.1"):
         self.jpeg: bytes | None = None
+        self.frame = None  # dernière image brute, encodée seulement si on la demande
         self.changed = threading.Condition()
         view = self
 
@@ -91,6 +93,12 @@ class LiveView:
                         self._send(503, "text/plain", b"pas encore d'image")
                     else:
                         self._send(200, "image/jpeg", view.jpeg)
+                elif self.path.startswith("/frame.jpg"):
+                    jpeg = view.encode(view.frame)
+                    if jpeg is None:
+                        self._send(503, "text/plain", b"pas encore d'image")
+                    else:
+                        self._send(200, "image/jpeg", jpeg)
                 elif self.path.startswith("/stream.mjpg"):
                     self.send_response(200)
                     self.send_header("Content-Type", "multipart/x-mixed-replace; boundary=frame")
@@ -124,14 +132,21 @@ class LiveView:
         self.server.daemon_threads = True
         threading.Thread(target=self.server.serve_forever, daemon=True).start()
 
-    def show(self, image) -> None:
+    def show(self, image, frame=None) -> None:
+        jpeg = self.encode(image)
+        if jpeg is not None:
+            with self.changed:
+                self.jpeg, self.frame = jpeg, frame
+                self.changed.notify_all()
+
+    @staticmethod
+    def encode(image) -> bytes | None:
         import cv2
 
+        if image is None:
+            return None
         ok, encoded = cv2.imencode(".jpg", image, [cv2.IMWRITE_JPEG_QUALITY, 80])
-        if ok:
-            with self.changed:
-                self.jpeg = encoded.tobytes()
-                self.changed.notify_all()
+        return encoded.tobytes() if ok else None
 
     def close(self) -> None:
         self.server.shutdown()
