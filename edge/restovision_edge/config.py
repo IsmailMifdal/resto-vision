@@ -44,7 +44,8 @@ def load_config(path: str | Path) -> EdgeConfig:
         groups={name: set(labels) for name, labels in raw.get("labels", {"person": ["person"]}).items()},
         stable_seconds=raw.get("stableSeconds", 5.0),
         seconds_per_customer=raw.get("queue", {}).get("secondsPerCustomer", 90.0),
-        mqtt_host=mqtt.get("host", "localhost"),
+        # RESTOVISION_MQTT_HOST remplace l'hôte du fichier (utile dans Docker).
+        mqtt_host=os.environ.get("RESTOVISION_MQTT_HOST") or mqtt.get("host", "localhost"),
         mqtt_port=mqtt.get("port", 1883),
         topic_prefix=mqtt.get("topicPrefix", "restovision"),
         # Le mot de passe peut rester hors du fichier : variable RESTOVISION_MQTT_PASSWORD.

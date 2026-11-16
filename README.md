@@ -23,11 +23,20 @@ alertes vocales, hygiène, multi-sites. Chaque module a déjà son fichier (voir
 
 ## Lancer la démo sans caméra
 
-Il faut Docker, Python 3.11+ et Node 22+.
+Le plus simple, avec Docker seulement :
+
+```bash
+docker compose --profile demo up --build     # puis http://localhost:8088
+```
+
+Le déroulé d'une présentation est dans [docs/DEMONSTRATION.md](docs/DEMONSTRATION.md), et l'installation
+dans un restaurant dans [docs/INSTALLATION.md](docs/INSTALLATION.md).
+
+Pour développer, lancer chaque partie à la main. Il faut Docker, Python 3.11+ et Node 22+.
 
 ```bash
 # 1. Base de données, broker MQTT et backend
-docker compose up --build
+docker compose up --build db mqtt backend
 
 # 2. Application web  ->  http://localhost:4200
 cd web && npm install && npm start
