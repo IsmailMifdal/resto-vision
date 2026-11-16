@@ -42,6 +42,10 @@ public class Ingredient {
     @Column(nullable = false)
     private Instant updatedAt;
 
+    /** Chez qui on le commande. Facultatif. */
+    @Column(length = 120)
+    private String supplier;
+
     protected Ingredient() {}
 
     public Ingredient(Restaurant restaurant, String name, String unit, BigDecimal quantity, BigDecimal threshold) {
@@ -74,4 +78,9 @@ public class Ingredient {
     public BigDecimal getQuantity() { return quantity; }
     public BigDecimal getThreshold() { return threshold; }
     public Instant getUpdatedAt() { return updatedAt; }
+    public String getSupplier() { return supplier; }
+
+    public void setSupplier(String supplier) {
+        this.supplier = supplier == null || supplier.isBlank() ? null : supplier.strip();
+    }
 }

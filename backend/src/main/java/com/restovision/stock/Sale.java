@@ -38,6 +38,10 @@ public class Sale {
 
     protected Sale() {}
 
+    public LocalDate getSaleDate() { return saleDate; }
+    public String getDishName() { return dishName; }
+    public BigDecimal getQuantity() { return quantity; }
+
     public Sale(SalesImport salesImport, LocalDate saleDate, String dishName, BigDecimal quantity, boolean matched) {
         this.salesImport = salesImport;
         this.saleDate = saleDate;

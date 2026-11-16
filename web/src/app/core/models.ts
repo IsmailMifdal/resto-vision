@@ -92,6 +92,7 @@ export interface Ingredient {
   threshold: number;
   low: boolean;
   updatedAt: string;
+  supplier: string | null;
 }
 
 export interface Dish {
@@ -104,6 +105,24 @@ export interface Stock {
   ingredients: Ingredient[];
   dishes: Dish[];
   lastImport: { fileName: string; importedAt: string; lines: number } | null;
+}
+
+/** Proposition de commande fournisseur. */
+export interface Order {
+  /** Nombre de jours que la commande doit permettre de tenir. */
+  coverDays: number;
+  /** Jours de ventes importées utilisés pour estimer la consommation. */
+  salesDays: number;
+  lines: {
+    ingredient: string;
+    unit: string;
+    supplier: string | null;
+    quantity: number;
+    /** null : aucune vente connue pour cet ingrédient. */
+    dailyUse: number | null;
+    daysLeft: number | null;
+    toOrder: number;
+  }[];
 }
 
 /** Bilan d'un import de ventes de la caisse. */

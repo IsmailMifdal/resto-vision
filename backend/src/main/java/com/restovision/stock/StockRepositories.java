@@ -1,10 +1,13 @@
 package com.restovision.stock;
 
 import com.restovision.domain.Restaurant;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 /** Accès aux tables du stock. */
 public final class StockRepositories {
@@ -28,5 +31,10 @@ public final class StockRepositories {
         Optional<SalesImport> findFirstByRestaurantOrderByImportedAtDesc(Restaurant restaurant);
     }
 
-    public interface Sales extends JpaRepository<Sale, UUID> {}
+    public interface Sales extends JpaRepository<Sale, UUID> {
+        /** Ventes dont le plat a une recette, depuis une date. */
+        @Query("select s from Sale s where s.salesImport.restaurant = :restaurant and s.matched = true "
+                + "and s.saleDate >= :since")
+        List<Sale> findMatchedSince(@Param("restaurant") Restaurant restaurant, @Param("since") LocalDate since);
+    }
 }

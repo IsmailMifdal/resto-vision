@@ -82,6 +82,16 @@ ce serait peu fiable.
 Chaque plat vendu retire sa recette du stock. L'écran signale les ingrédients passés sous leur seuil, les plats
 vendus sans recette et les lignes illisibles. Un même fichier ne peut pas être compté deux fois.
 
+### Commande fournisseur
+
+La carte « Commande à préparer » propose les quantités à commander pour tenir 3, 7 ou 14 jours. Pour chaque
+ingrédient, la consommation par jour vient des ventes importées sur les 28 derniers jours ; la commande
+couvre la durée choisie et laisse le stock au-dessus du seuil. Sans vente importée, seuls les ingrédients
+sous leur seuil sont proposés. Les lignes sont regroupées par fournisseur et se copient en texte.
+
+La proposition ne tient pas encore compte de l'affluence prévue : les ventes viennent de la caisse et
+l'affluence des caméras, et il faut de vraies données pour relier les deux.
+
 ## Prévision d'affluence
 
 L'écran « Service » affiche l'affluence attendue le lendemain, heure par heure. C'est la moyenne des 28 derniers

@@ -39,7 +39,7 @@ export class RoadmapPage {
     { version: 'V2', title: 'Caisse connectée en direct', what: 'Le stock, aujourd’hui mis à jour par un fichier de ventes, suivra la caisse vente après vente.' },
     { version: 'V2', title: 'Anti-gaspillage', what: 'Repérer les assiettes qui reviennent pleines.' },
     { version: 'V2', title: 'Prévision avec météo et réservations', what: 'La prévision du lendemain, déjà visible dans Service, affinée par la météo et les réservations.' },
-    { version: 'V2', title: 'Commande fournisseur', what: 'Un bon de commande préparé, à valider en un clic.' },
+    { version: 'V2', title: 'Commande envoyée au fournisseur', what: 'Le bon de commande, déjà préparé dans Stock, envoyé directement et ajusté à l’affluence prévue.' },
     { version: 'V2', title: 'Rapport envoyé chaque soir', what: 'Le rapport du jour, déjà visible dans Service, envoyé par e-mail au gérant.' },
     { version: 'V3', title: 'Alertes vocales', what: 'Sur oreillette ou montre, sans regarder un écran.' },
     { version: 'V3', title: 'Hygiène et sécurité', what: 'Sol mouillé, sortie de secours bloquée. Après validation juridique.' },

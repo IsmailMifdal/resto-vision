@@ -84,6 +84,7 @@ public class StockService {
             ingredient = ownIngredient(restaurant, id);
             ingredient.update(request.name(), request.unit(), request.quantity(), request.threshold());
         }
+        ingredient.setSupplier(request.supplier());
         return IngredientDto.of(ingredients.save(ingredient));
     }
 

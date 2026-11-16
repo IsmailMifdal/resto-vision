@@ -6,6 +6,8 @@ import com.restovision.stock.StockDtos.ImportResultDto;
 import com.restovision.stock.StockDtos.IngredientDto;
 import com.restovision.stock.StockDtos.IngredientRequest;
 import com.restovision.stock.StockDtos.StockDto;
+import com.restovision.stock.OrderService;
+import com.restovision.stock.StockDtos.OrderDto;
 import com.restovision.stock.StockService;
 import jakarta.validation.Valid;
 import java.io.IOException;
@@ -33,9 +35,11 @@ import org.springframework.web.server.ResponseStatusException;
 public class StockController {
     private static final long MAX_FILE_BYTES = 2_000_000;
     private final StockService stock;
+    private final OrderService orders;
 
-    public StockController(StockService stock) {
+    public StockController(StockService stock, OrderService orders) {
         this.stock = stock;
+        this.orders = orders;
     }
 
     private static String restaurantOf(Jwt jwt) {
@@ -79,6 +83,12 @@ public class StockController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteDish(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id) {
         stock.deleteDish(restaurantOf(jwt), id);
+    }
+
+    /** Proposition de commande fournisseur pour tenir `days` jours. */
+    @GetMapping("/order")
+    public OrderDto order(@AuthenticationPrincipal Jwt jwt, @RequestParam(defaultValue = "7") int days) {
+        return orders.proposal(restaurantOf(jwt), days);
     }
 
     /** Import d'un export de ventes de la caisse (CSV : date, plat, quantite). */

@@ -3,7 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { API_URL } from './config';
 import {
-  Alert, AlertRule, Day, DaySummary, Dish, Forecast, ImportResult, Ingredient, Report, Session, Stats, Stock, Zone,
+  Alert, AlertRule, Day, DaySummary, Dish, Forecast, ImportResult, Ingredient, Order, Report, Session, Stats, Stock, Zone,
 } from './models';
 
 @Injectable({ providedIn: 'root' })
@@ -41,12 +41,16 @@ export class ApiService {
   stock(): Observable<Stock> {
     return this.http.get<Stock>(`${API_URL}/stock`);
   }
-  addIngredient(item: Pick<Ingredient, 'name' | 'unit' | 'quantity' | 'threshold'>): Observable<Ingredient> {
+  /** Proposition de commande pour tenir `days` jours. */
+  order(days: number): Observable<Order> {
+    return this.http.get<Order>(`${API_URL}/stock/order`, { params: { days } });
+  }
+  addIngredient(item: Pick<Ingredient, 'name' | 'unit' | 'quantity' | 'threshold' | 'supplier'>): Observable<Ingredient> {
     return this.http.post<Ingredient>(`${API_URL}/stock/ingredients`, item);
   }
   updateIngredient(item: Ingredient): Observable<Ingredient> {
-    const { name, unit, quantity, threshold } = item;
-    return this.http.put<Ingredient>(`${API_URL}/stock/ingredients/${item.id}`, { name, unit, quantity, threshold });
+    const { name, unit, quantity, threshold, supplier } = item;
+    return this.http.put<Ingredient>(`${API_URL}/stock/ingredients/${item.id}`, { name, unit, quantity, threshold, supplier });
   }
   deleteIngredient(id: string): Observable<void> {
     return this.http.delete<void>(`${API_URL}/stock/ingredients/${id}`);

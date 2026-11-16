@@ -36,15 +36,15 @@ public class DemoStockSeeder implements CommandLineRunner {
         if (demo == null || ingredients.countByRestaurant(demo) > 0) {
             return;
         }
-        Ingredient buns = add(demo, "Pain burger", "pièce", "80", "30");
-        Ingredient beef = add(demo, "Steak haché", "kg", "9", "4");
-        Ingredient cheddar = add(demo, "Cheddar", "kg", "2.5", "1");
-        Ingredient potatoes = add(demo, "Pommes de terre", "kg", "30", "12");
-        Ingredient salad = add(demo, "Salade", "kg", "4", "2");
-        Ingredient goat = add(demo, "Chèvre", "kg", "1.8", "0.8");
-        Ingredient dough = add(demo, "Pâte à pizza", "pièce", "40", "15");
-        Ingredient mozzarella = add(demo, "Mozzarella", "kg", "5", "2");
-        Ingredient tomato = add(demo, "Sauce tomate", "L", "6", "2");
+        Ingredient buns = add(demo, "Pain burger", "pièce", "80", "30", "Boulangerie Martin");
+        Ingredient beef = add(demo, "Steak haché", "kg", "9", "4", "Boucherie Leroy");
+        Ingredient cheddar = add(demo, "Cheddar", "kg", "2.5", "1", "Métro");
+        Ingredient potatoes = add(demo, "Pommes de terre", "kg", "30", "12", "Primeurs du marché");
+        Ingredient salad = add(demo, "Salade", "kg", "4", "2", "Primeurs du marché");
+        Ingredient goat = add(demo, "Chèvre", "kg", "1.8", "0.8", "Métro");
+        Ingredient dough = add(demo, "Pâte à pizza", "pièce", "40", "15", "Boulangerie Martin");
+        Ingredient mozzarella = add(demo, "Mozzarella", "kg", "5", "2", "Métro");
+        Ingredient tomato = add(demo, "Sauce tomate", "L", "6", "2", "Métro");
 
         dish(demo, "Burger maison", new Object[][] {{buns, "1"}, {beef, "0.15"}, {cheddar, "0.03"}, {salad, "0.02"}});
         dish(demo, "Frites", new Object[][] {{potatoes, "0.25"}});
@@ -52,8 +52,10 @@ public class DemoStockSeeder implements CommandLineRunner {
         dish(demo, "Pizza margherita", new Object[][] {{dough, "1"}, {mozzarella, "0.12"}, {tomato, "0.08"}});
     }
 
-    private Ingredient add(Restaurant demo, String name, String unit, String quantity, String threshold) {
-        return ingredients.save(new Ingredient(demo, name, unit, new BigDecimal(quantity), new BigDecimal(threshold)));
+    private Ingredient add(Restaurant demo, String name, String unit, String quantity, String threshold, String supplier) {
+        Ingredient ingredient = new Ingredient(demo, name, unit, new BigDecimal(quantity), new BigDecimal(threshold));
+        ingredient.setSupplier(supplier);
+        return ingredients.save(ingredient);
     }
 
     private void dish(Restaurant demo, String name, Object[][] lines) {

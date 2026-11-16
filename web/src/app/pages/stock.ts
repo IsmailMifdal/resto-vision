@@ -1,6 +1,6 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { ApiService } from '../core/api.service';
-import { Dish, ImportResult, Ingredient, Stock } from '../core/models';
+import { Dish, ImportResult, Ingredient, Order, Stock } from '../core/models';
 import { SessionService } from '../core/session.service';
 
 interface DraftLine {
@@ -33,7 +33,7 @@ const amount = (value: number) => value.toLocaleString('fr-FR', { maximumFractio
           <div class="scroll">
           <table>
             <thead>
-              <tr><th>Ingrédient</th><th class="num">En stock</th><th class="num">Seuil</th><th></th><th></th></tr>
+              <tr><th>Ingrédient</th><th class="num">En stock</th><th class="num">Seuil</th><th></th><th></th><th>Fournisseur</th></tr>
             </thead>
             <tbody>
               @for (item of s.ingredients; track item.id) {
@@ -52,9 +52,13 @@ const amount = (value: number) => value.toLocaleString('fr-FR', { maximumFractio
                   </td>
                   <td>@if (item.low) { <span class="pill">{{ item.quantity < 0 ? 'Inventaire à refaire' : 'À commander' }}</span> }</td>
                   <td class="num">@if (canEdit) { <button class="quiet" (click)="removeIngredient(item)" [attr.aria-label]="'Supprimer ' + item.name">Supprimer</button> }</td>
+                  <td>
+                    <input class="supplier" [value]="item.supplier ?? ''" [disabled]="!canEdit" maxlength="120" placeholder="Non renseigné"
+                           (change)="setSupplier(item, $event)" [attr.aria-label]="'Fournisseur : ' + item.name">
+                  </td>
                 </tr>
               } @empty {
-                <tr><td colspan="5"><p class="empty">Aucun ingrédient. Ajoutez le premier ci-dessous.</p></td></tr>
+                <tr><td colspan="6"><p class="empty">Aucun ingrédient. Ajoutez le premier ci-dessous.</p></td></tr>
               }
             </tbody>
           </table>
@@ -65,6 +69,7 @@ const amount = (value: number) => value.toLocaleString('fr-FR', { maximumFractio
               <input name="unit" placeholder="Unité (kg, L, pièce)" required maxlength="20" aria-label="Unité">
               <input class="num" name="quantity" type="number" step="any" placeholder="En stock" required aria-label="Quantité en stock">
               <input class="num" name="threshold" type="number" min="0" step="any" placeholder="Seuil" required aria-label="Seuil de commande">
+              <input name="supplier" placeholder="Fournisseur" maxlength="120" aria-label="Fournisseur">
               <button type="submit">Ajouter</button>
             </form>
           }
@@ -74,6 +79,39 @@ const amount = (value: number) => value.toLocaleString('fr-FR', { maximumFractio
       </section>
 
       <div class="side">
+        <section class="card">
+          <div class="card-head">
+            <h2>Commande à préparer</h2>
+            <label class="cover muted small">Pour tenir
+              <select [value]="coverDays()" (change)="setCover($event)" aria-label="Nombre de jours à couvrir">
+                <option value="3">3 jours</option>
+                <option value="7">7 jours</option>
+                <option value="14">14 jours</option>
+              </select>
+            </label>
+          </div>
+          @if (order(); as o) {
+            <p class="muted small">{{ orderBasis(o) }}</p>
+            @if (o.lines.length) {
+              @for (group of orderGroups(); track group.supplier) {
+                <h3>{{ group.supplier }}</h3>
+                <ul class="order">
+                  @for (line of group.lines; track line.ingredient) {
+                    <li class="num">
+                      <span>{{ line.ingredient }}</span>
+                      <span class="muted small">{{ line.daysLeft === null ? 'sous le seuil' : 'reste ' + amount(line.daysLeft) + ' j' }}</span>
+                      <strong>{{ amount(line.toOrder) }} {{ line.unit }}</strong>
+                    </li>
+                  }
+                </ul>
+              }
+              <button (click)="copyOrder()">{{ copied() ? 'Copié' : 'Copier le bon de commande' }}</button>
+            } @else {
+              <p class="empty">Rien à commander pour tenir {{ o.coverDays }} jours.</p>
+            }
+          }
+        </section>
+
         <section class="card">
           <div class="card-head">
             <h2>Ventes de la caisse</h2>
@@ -168,7 +206,16 @@ const amount = (value: number) => value.toLocaleString('fr-FR', { maximumFractio
     .field { display: inline-flex; align-items: center; gap: 8px; }
     .unit { min-width: 38px; text-align: left; }
     .pill { display: inline-block; white-space: nowrap; height: 22px; line-height: 22px; padding: 0 9px; border-radius: 11px; background: var(--waiting-bg); color: var(--waiting); font-size: 12px; font-weight: 500; }
-    .add { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) 100px 90px auto; gap: 8px; margin-top: 16px; }
+    td input.supplier { width: 150px; text-align: left; }
+    .add { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 0.9fr) 90px 80px minmax(0, 1fr) auto; gap: 8px; margin-top: 16px; }
+    .cover { display: inline-flex; align-items: center; gap: 8px; }
+    .cover select { width: auto; height: 32px; }
+    h3 { font-size: 12px; line-height: 16px; font-weight: 500; color: var(--muted); margin: 16px 0 2px; }
+    .order { list-style: none; margin: 0 0 4px; padding: 0; }
+    .order li { display: grid; grid-template-columns: minmax(0, 1fr) auto 96px; align-items: center; gap: 12px; min-height: 36px; border-top: 1px solid var(--rule); }
+    .order li:first-child { border-top: 0; }
+    .order strong { font-weight: 600; text-align: right; }
+    .order + button { margin-top: 14px; }
     .add input { height: 36px; }
     .pick { display: inline-flex; align-items: center; height: var(--control-height); padding: 0 16px; margin-top: 14px; border-radius: var(--radius-control); cursor: pointer; background: var(--text); color: #000; font-weight: 500; }
     .pick.busy { opacity: 0.6; cursor: default; }
@@ -193,7 +240,7 @@ const amount = (value: number) => value.toLocaleString('fr-FR', { maximumFractio
     @media (max-width: 1180px) { .layout { grid-template-columns: minmax(0, 1fr); } }
     @media (max-width: 640px) {
       .add, .line-add { grid-template-columns: 1fr 1fr; }
-      th:nth-child(3), td:nth-child(3), th:nth-child(5), td:nth-child(5) { display: none; }
+      th:nth-child(3), td:nth-child(3), th:nth-child(5), td:nth-child(5), th:nth-child(6), td:nth-child(6) { display: none; }
       td input { width: 76px; }
     }
   `,
@@ -207,6 +254,10 @@ export class StockPage implements OnInit {
   readonly error = signal<string | null>(null);
   readonly result = signal<ImportResult | null>(null);
   readonly importing = signal(false);
+  readonly order = signal<Order | null>(null);
+  readonly coverDays = signal(7);
+  readonly copied = signal(false);
+  private readonly restaurantName = inject(SessionService).session()?.restaurantName ?? '';
   /** Recette en cours de saisie. */
   readonly draft = signal<DraftLine[]>([]);
 
@@ -221,8 +272,53 @@ export class StockPage implements OnInit {
     return low.length === 1 ? `1 ingrédient à commander : ${names}.` : `${low.length} ingrédients à commander : ${names}.`;
   });
 
+  /** Les lignes à commander, regroupées par fournisseur. */
+  readonly orderGroups = computed(() => {
+    const groups = new Map<string, Order['lines']>();
+    for (const line of this.order()?.lines ?? []) {
+      const supplier = line.supplier ?? 'Fournisseur non renseigné';
+      groups.set(supplier, [...(groups.get(supplier) ?? []), line]);
+    }
+    return [...groups].map(([supplier, lines]) => ({ supplier, lines }));
+  });
+
   ngOnInit(): void {
     this.reload();
+  }
+
+  setCover(event: Event): void {
+    this.coverDays.set(Number((event.target as HTMLSelectElement).value));
+    this.loadOrder();
+  }
+
+  setSupplier(item: Ingredient, event: Event): void {
+    this.saveIngredient({ ...item, supplier: (event.target as HTMLInputElement).value.trim() || null });
+  }
+
+  /** Sur quoi repose la proposition, pour savoir quel crédit lui donner. */
+  orderBasis(order: Order): string {
+    if (!order.salesDays) return 'Aucune vente importée : seuls les ingrédients sous leur seuil sont proposés.';
+    const days = `${order.salesDays} ${order.salesDays > 1 ? 'jours' : 'jour'} de ventes`;
+    return `Consommation estimée sur ${days} importées. Proposition à relire avant envoi.`;
+  }
+
+  /** Le bon de commande en texte, prêt à coller dans un e-mail. */
+  orderText(): string {
+    const today = new Date().toLocaleDateString('fr-FR');
+    const blocks = this.orderGroups().map(
+      (group) => `${group.supplier}\n` + group.lines.map((line) => `- ${line.ingredient} : ${amount(line.toOrder)} ${line.unit}`).join('\n'),
+    );
+    return `Commande ${this.restaurantName} du ${today}\n\n${blocks.join('\n\n')}\n`;
+  }
+
+  async copyOrder(): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(this.orderText());
+      this.copied.set(true);
+      setTimeout(() => this.copied.set(false), 2500);
+    } catch {
+      this.error.set('Le bon de commande n’a pas pu être copié. Sélectionnez les lignes à la main.');
+    }
   }
 
   setQuantity(item: Ingredient, event: Event): void {
@@ -245,6 +341,7 @@ export class StockPage implements OnInit {
         unit: String(data.get('unit')),
         quantity: Number(data.get('quantity')),
         threshold: Number(data.get('threshold')),
+        supplier: String(data.get('supplier') ?? '').trim() || null,
       })
       .subscribe({ next: () => { form.reset(); this.reload(); }, error: (e) => this.fail(e, 'L’ingrédient n’a pas pu être ajouté.') });
   }
@@ -319,6 +416,11 @@ export class StockPage implements OnInit {
       next: (stock) => this.stock.set(stock),
       error: () => this.error.set('Stock indisponible. Vérifiez que le backend tourne.'),
     });
+    this.loadOrder();
+  }
+
+  private loadOrder(): void {
+    this.api.order(this.coverDays()).subscribe({ next: (order) => this.order.set(order), error: () => this.order.set(null) });
   }
 
   /** Le backend explique ses refus en clair (« Ce fichier a déjà été importé… ») : on affiche sa phrase. */

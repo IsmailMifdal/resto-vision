@@ -15,15 +15,20 @@ public final class StockDtos {
     private StockDtos() {}
 
     public record IngredientDto(UUID id, String name, String unit, BigDecimal quantity, BigDecimal threshold,
-                                boolean low, Instant updatedAt) {
+                                boolean low, Instant updatedAt, String supplier) {
         public static IngredientDto of(Ingredient i) {
             return new IngredientDto(i.getId(), i.getName(), i.getUnit(), i.getQuantity(), i.getThreshold(), i.isLow(),
-                    i.getUpdatedAt());
+                    i.getUpdatedAt(), i.getSupplier());
         }
     }
 
     public record IngredientRequest(@NotBlank @Size(max = 120) String name, @NotBlank @Size(max = 20) String unit,
-                                    @NotNull BigDecimal quantity, @NotNull @DecimalMin("0") BigDecimal threshold) {}
+                                    @NotNull BigDecimal quantity, @NotNull @DecimalMin("0") BigDecimal threshold,
+                                    @Size(max = 120) String supplier) {
+        public IngredientRequest(String name, String unit, BigDecimal quantity, BigDecimal threshold) {
+            this(name, unit, quantity, threshold, null);
+        }
+    }
 
     public record RecipeLineDto(UUID ingredientId, String ingredient, String unit, BigDecimal quantity) {}
 
@@ -50,6 +55,16 @@ public final class StockDtos {
     public record UnknownDishDto(String name, BigDecimal quantity) {}
 
     public record ProblemDto(int line, String message) {}
+
+    /**
+     * Une ligne du bon de commande. `dailyUse` et `daysLeft` sont nuls quand aucune vente importée
+     * ne permet de les estimer.
+     */
+    public record OrderLineDto(String ingredient, String unit, String supplier, BigDecimal quantity,
+                               BigDecimal dailyUse, BigDecimal daysLeft, BigDecimal toOrder) {}
+
+    /** Proposition de commande pour tenir `coverDays` jours. `salesDays` : jours de ventes utilisés pour l'estimation. */
+    public record OrderDto(int coverDays, int salesDays, List<OrderLineDto> lines) {}
 
     /** Bilan d'un import de ventes. */
     public record ImportResultDto(String fileName, int lines, BigDecimal dishesSold, List<UsageDto> usage,
