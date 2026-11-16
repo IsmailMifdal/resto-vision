@@ -31,3 +31,15 @@ class Pipeline:
         for analyzer in self.analyzers:
             events.extend(analyzer.process(detections, now))
         return events
+
+
+def layout_event(config: EdgeConfig, now: float) -> Event:
+    """Le contour de toutes les zones, pour que l'application dessine le plan de salle. Aucune image."""
+    return Event(
+        type="LAYOUT",
+        restaurant_id=config.restaurant_id,
+        zone_id="",
+        timestamp=now,
+        data={"zones": [{"id": zone.id, "type": zone.type, "polygon": [list(point) for point in zone.polygon]}
+                        for zone in config.zones]},
+    )

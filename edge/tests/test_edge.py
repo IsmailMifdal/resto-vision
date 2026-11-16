@@ -4,7 +4,7 @@ from restovision_edge.analyzers.queue import QueueAnalyzer
 from restovision_edge.analyzers.tables import TableAnalyzer, classify
 from restovision_edge.config import load_config
 from restovision_edge.models import Detection, Event, TableState, Zone
-from restovision_edge.pipeline import Pipeline
+from restovision_edge.pipeline import Pipeline, layout_event
 from restovision_edge.publisher import MqttPublisher
 from restovision_edge.simulate import scenario
 from restovision_edge.smoothing import Window
@@ -156,12 +156,14 @@ class FakeClient:
     def __init__(self):
         self.connected = False
         self.sent = []
+        self.retained = []
 
     def is_connected(self):
         return self.connected
 
-    def publish(self, topic, payload, qos=0):
+    def publish(self, topic, payload, qos=0, retain=False):
         self.sent.append((topic, payload))
+        self.retained.append(retain)
         return type("Info", (), {"rc": 0})()
 
     def loop_stop(self):
@@ -181,3 +183,22 @@ def test_mqtt_buffers_while_offline_then_flushes_in_order():
     publisher.flush()
     assert len(client.sent) == 2 and not publisher.buffer
     assert '"persons": 1' in client.sent[0][1] and '"persons": 2' in client.sent[1][1]
+
+
+def test_layout_event_describes_every_zone_without_any_image():
+    config = load_config("config/edge.example.json")
+    message = layout_event(config, 0.0).to_json()
+    assert message["type"] == "LAYOUT" and message["restaurantId"] == "demo"
+    assert [z["id"] for z in message["zones"]] == [z.id for z in config.zones]
+    assert message["zones"][0] == {"id": "Q1", "type": "QUEUE", "polygon": [[60, 90], [250, 90], [250, 630], [60, 630]]}
+    assert set(message) == {"type", "restaurantId", "zoneId", "timestamp", "zones"}
+
+
+def test_layout_is_retained_on_its_own_topic():
+    client = FakeClient()
+    client.connected = True
+    publisher = MqttPublisher("h", 1, "restovision/demo/events", client=client)
+    publisher.publish(Event("QUEUE", "demo", "Q1", 1.0, {"persons": 1}))
+    publisher.publish_layout(layout_event(load_config("config/edge.example.json"), 2.0))
+    assert [topic for topic, _ in client.sent] == ["restovision/demo/events", "restovision/demo/layout"]
+    assert client.retained == [False, True]

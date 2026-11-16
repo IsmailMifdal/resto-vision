@@ -1,5 +1,7 @@
 package com.restovision.edge;
 
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PreDestroy;
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
@@ -24,21 +26,36 @@ public class MqttListener implements MqttCallback {
 
     private final String url;
     private final String topic;
+    private final String layoutTopic;
     private final ObjectMapper mapper;
     private final EdgeEventService service;
     private MqttClient client;
+    /** Vrai une fois l'application démarrée, données de démonstration comprises. */
+    private volatile boolean ready;
 
     public MqttListener(@Value("${restovision.mqtt.url}") String url,
                         @Value("${restovision.mqtt.topic}") String topic,
+                        @Value("${restovision.mqtt.layout-topic:restovision/+/layout}") String layoutTopic,
                         ObjectMapper mapper, EdgeEventService service) {
         this.url = url;
         this.topic = topic;
+        this.layoutTopic = layoutTopic;
         this.mapper = mapper;
         this.service = service;
     }
 
+    /** On n'écoute le broker qu'après le démarrage complet : un message ne doit pas croiser l'initialisation. */
+    @EventListener(ApplicationReadyEvent.class)
+    public void start() {
+        ready = true;
+        ensureConnected();
+    }
+
     @Scheduled(fixedDelay = 10_000)
     public synchronized void ensureConnected() {
+        if (!ready) {
+            return;
+        }
         try {
             if (client == null) {
                 client = new MqttClient(url, "restovision-backend-" + MqttClient.generateClientId(), new MemoryPersistence());
@@ -49,7 +66,7 @@ public class MqttListener implements MqttCallback {
                 options.setCleanSession(true);
                 options.setConnectionTimeout(5);
                 client.connect(options);
-                client.subscribe(topic, 1);
+                client.subscribe(new String[] {topic, layoutTopic}, new int[] {1, 1});
                 log.info("Connecté au broker MQTT {} (topic {})", url, topic);
             }
         } catch (MqttException e) {

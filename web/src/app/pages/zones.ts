@@ -18,11 +18,12 @@ import { SessionService } from '../core/session.service';
   selector: 'app-zones',
   host: { '(document:keydown.escape)': 'cancelDraft()' },
   template: `
-    <h1>Zones de la caméra</h1>
-    <p class="muted intro">
-      Dessinez chaque table <strong>avec ses chaises</strong>, et la file d’attente devant le comptoir.
-      L’image reste dans ce navigateur : elle n’est envoyée nulle part.
-    </p>
+    <div class="page-head">
+      <div>
+        <h1>Zones de la caméra</h1>
+        <p>Dessinez chaque table avec ses chaises, et la file devant le comptoir. L’image reste dans ce navigateur.</p>
+      </div>
+    </div>
 
     <div class="card sources">
       <div>
@@ -134,42 +135,42 @@ import { SessionService } from '../core/session.service';
     }
   `,
   styles: `
-    .intro { margin: -0.5rem 0 1rem; }
-    .small { font-size: 0.85rem; }
-    .sources { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+    .sources { display: grid; gap: 20px 32px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+    .sources strong { font-weight: 600; }
+    .error { margin-top: 12px; }
     .row { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; margin: 0.4rem 0; }
     .row input[type='url'] { flex: 1; min-width: 200px; }
-    .pick { border: 1px solid var(--border); border-radius: 8px; padding: 0.45rem 0.9rem; cursor: pointer; background: var(--surface); white-space: nowrap; }
+    .pick { display: inline-flex; align-items: center; height: var(--control-height); padding: 0 16px; border-radius: var(--radius-control); cursor: pointer; background: var(--raised); font-weight: 500; white-space: nowrap; }
     .pick input { display: none; }
-    .pick:focus-within { outline: 2px solid var(--accent); }
-    code { background: var(--bg); padding: 0.05rem 0.3rem; border-radius: 4px; }
-    .layout { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 1rem; margin-top: 1rem; align-items: start; }
+    .pick:focus-within { outline: 2px solid var(--text); outline-offset: 2px; }
+    .layout { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: var(--gap); margin-top: var(--gap); align-items: start; }
     @media (max-width: 800px) { .layout { grid-template-columns: 1fr; } }
     .tools { display: flex; gap: 0.5rem; flex-wrap: wrap; }
     .hint { margin: 0.5rem 0; }
-    .stage { position: relative; line-height: 0; border-radius: 12px; overflow: hidden; border: 1px solid var(--border); }
+    .stage { position: relative; line-height: 0; border-radius: 14px; overflow: hidden; background: var(--surface); }
     .stage img { width: 100%; height: auto; }
     svg { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; }
     svg.drawing { cursor: crosshair; }
     polygon { stroke-width: 2; vector-effect: non-scaling-stroke; cursor: pointer; }
-    polygon.table { fill: rgba(31, 111, 67, 0.25); stroke: #1f6f43; }
-    polygon.queue { fill: rgba(125, 60, 150, 0.25); stroke: #7d3c96; }
+    polygon.table { fill: rgba(134, 217, 160, 0.22); stroke: var(--free); }
+    polygon.queue { fill: rgba(255, 255, 255, 0.14); stroke: #ffffff; stroke-dasharray: 6 4; }
     polygon.selected { stroke-width: 4; fill-opacity: 0.6; }
     svg.drawing polygon { pointer-events: none; }
     text { fill: #fff; font-weight: 700; paint-order: stroke; stroke: rgba(0, 0, 0, 0.75); stroke-width: 3px; vector-effect: non-scaling-stroke; pointer-events: none; }
     .draft { fill: none; stroke: #fff; stroke-width: 2; stroke-dasharray: 6 4; vector-effect: non-scaling-stroke; pointer-events: none; }
     .handle { fill: #fff; stroke: #1f2328; stroke-width: 2; vector-effect: non-scaling-stroke; cursor: grab; }
-    .handle.closer { fill: var(--accent); cursor: pointer; }
-    aside h2 { margin-top: 0; }
-    .zone { margin-bottom: 0.6rem; padding: 0.7rem; cursor: pointer; }
-    .zone.selected { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+    .handle.closer { fill: var(--free); cursor: pointer; }
+    aside h2 { margin-bottom: 12px; }
+    .zone { margin-bottom: 8px; padding: 12px; border-radius: 14px; cursor: pointer; }
+    .zone.selected { box-shadow: inset 0 0 0 1.5px var(--text); }
     .zone .row { margin: 0; flex-wrap: nowrap; }
     .zone .row input { min-width: 0; }
-    select { font: inherit; border: 1px solid var(--border); border-radius: 8px; padding: 0.5rem; background: var(--surface); }
-    .baseline { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-top: 0.5rem; font-size: 0.85rem; color: var(--muted); }
+    select { width: auto; }
+    .baseline { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; font-size: 12px; line-height: 16px; color: var(--muted); }
     .baseline input { width: 70px; flex: none; }
-    .save { width: 100%; margin-top: 0.5rem; }
-    pre { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 0.7rem; font-size: 0.75rem; overflow: auto; max-height: 320px; }
+    .save { width: 100%; margin-top: 8px; height: 40px; }
+    pre { background: var(--surface); border-radius: 10px; padding: 12px; font-size: 12px; line-height: 16px; overflow: auto; max-height: 320px; }
+    summary { cursor: pointer; color: var(--muted); }
     p { margin: 0.4rem 0; }
   `,
 })

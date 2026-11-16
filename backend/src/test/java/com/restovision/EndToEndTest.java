@@ -1,5 +1,7 @@
 package com.restovision;
 
+import com.restovision.api.Dtos.DayDto;
+import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -56,6 +58,28 @@ class EndToEndTest {
 
         edge.handle(new EdgeEvent("QUEUE", "demo", "Q9", Instant.now(), null, null, 1, null, 90));
         assertThat(queries.openAlerts("demo")).noneMatch(a -> a.zoneCode().equals("Q9"));
+    }
+
+    @Test
+    void zoneLayoutFromTheBoxIsExposedForTheFloorPlan() {
+        List<List<Double>> square = List.of(List.of(100.0, 300.0), List.of(400.0, 300.0), List.of(400.0, 600.0),
+                List.of(100.0, 600.0));
+        edge.handle(EdgeEvent.layout("demo", List.of(
+                new EdgeEvent.ZoneLayout("T7", "TABLE", square),
+                new EdgeEvent.ZoneLayout("T77", "TABLE", List.of(List.of(1.0, 2.0))))));  // contour incomplet
+        assertThat(queries.zones("demo"))
+                .anyMatch(z -> z.code().equals("T7") && z.state() == TableState.EMPTY && square.equals(z.polygon()));
+        assertThat(queries.zones("demo")).noneMatch(z -> z.code().equals("T77"));
+    }
+
+    @Test
+    void aDayOfHistoryIsReadableThroughTheApi() {
+        edge.handle(table("T6", "WAITING", "EMPTY", Instant.now().minusSeconds(300), 2, 0));
+        edge.handle(table("T6", "SERVED", "WAITING", Instant.now().minusSeconds(60), 2, 2));
+        DayDto day = queries.day("demo", null);
+        assertThat(day.tables()).anyMatch(t -> t.code().equals("T6") && !t.segments().isEmpty());
+        assertThat(queries.lastDays("demo", 7)).hasSize(7);
+        assertThat(queries.lastDays("demo", 7).get(6).date()).isEqualTo(day.date());
     }
 
     @Test

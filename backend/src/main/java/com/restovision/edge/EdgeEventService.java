@@ -1,5 +1,6 @@
 package com.restovision.edge;
 
+import java.util.List;
 import com.restovision.alert.AlertService;
 import com.restovision.api.Dtos.ZoneDto;
 import com.restovision.domain.Restaurant;
@@ -39,6 +40,10 @@ public class EdgeEventService {
 
     @Transactional
     public void handle(EdgeEvent event) {
+        if ("LAYOUT".equals(event.type())) {
+            handleLayout(event);
+            return;
+        }
         if (event.type() == null || event.restaurantId() == null || event.zoneId() == null) {
             log.warn("Événement incomplet ignoré : {}", event);
             return;
@@ -86,6 +91,39 @@ public class EdgeEventService {
         events.save(new ZoneEvent(zone, zone.getState(), previous, zone.getPersons(), zone.getDishes(), at));
         notifier.zone(restaurant.getCode(), ZoneDto.of(zone));
         alertService.evaluateZone(zone, now);
+    }
+
+    /** Le boîtier annonce le contour de ses zones : on le garde pour dessiner le plan de salle. */
+    private void handleLayout(EdgeEvent event) {
+        Restaurant restaurant = event.restaurantId() == null ? null
+                : restaurants.findByCode(event.restaurantId()).orElse(null);
+        if (restaurant == null || event.zones() == null) {
+            log.warn("Plan ignoré, restaurant inconnu ou plan vide : {}", event.restaurantId());
+            return;
+        }
+        for (EdgeEvent.ZoneLayout layout : event.zones()) {
+            ZoneType type = "TABLE".equals(layout.type()) ? ZoneType.TABLE
+                    : "QUEUE".equals(layout.type()) ? ZoneType.QUEUE : null;
+            List<List<Double>> polygon = layout.polygon();
+            boolean valid = layout.id() != null && type != null && polygon != null
+                    && polygon.size() >= 3 && polygon.size() <= 100
+                    && polygon.stream().allMatch(point -> point != null && point.size() == 2
+                            && point.get(0) != null && point.get(1) != null);
+            if (!valid) {
+                log.warn("Zone invalide ignorée dans le plan de {} : {}", restaurant.getCode(), layout.id());
+                continue;
+            }
+            Zone zone = zones.findByRestaurantAndCode(restaurant, layout.id())
+                    .orElseGet(() -> zones.save(new Zone(restaurant, layout.id(), type)));
+            if (zone.getType() != type) {
+                log.warn("La zone {} n'est pas de type {}", zone.getCode(), type);
+                continue;
+            }
+            if (!polygon.equals(zone.getPolygon())) {
+                zone.setPolygon(polygon);
+                notifier.zone(restaurant.getCode(), ZoneDto.of(zone));
+            }
+        }
     }
 
     private static TableState parseState(String value) {

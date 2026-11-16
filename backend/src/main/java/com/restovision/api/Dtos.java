@@ -1,5 +1,7 @@
 package com.restovision.api;
 
+import java.time.LocalDate;
+import java.util.List;
 import com.restovision.domain.Alert;
 import com.restovision.domain.AlertRule;
 import com.restovision.domain.AlertType;
@@ -17,10 +19,10 @@ public final class Dtos {
     private Dtos() {}
 
     public record ZoneDto(String code, ZoneType type, TableState state, Instant stateSince,
-                          int persons, int dishes, Integer estimatedWaitSeconds) {
+                          int persons, int dishes, Integer estimatedWaitSeconds, List<List<Double>> polygon) {
         public static ZoneDto of(Zone z) {
             return new ZoneDto(z.getCode(), z.getType(), z.getState(), z.getStateSince(),
-                    z.getPersons(), z.getDishes(), z.getEstimatedWaitSeconds());
+                    z.getPersons(), z.getDishes(), z.getEstimatedWaitSeconds(), z.getPolygon());
         }
     }
 
@@ -42,6 +44,23 @@ public final class Dtos {
 
     public record StatsDto(int tablesTotal, int tablesOccupied, int tablesToClear, double occupancyRate,
                            Integer averageWaitSeconds, int seatingsToday, int queuePersons, int queueWaitSeconds) {}
+
+    /** Un état tenu par une table, de `start` à `end`. Les périodes « libre » ne sont pas listées. */
+    public record SegmentDto(TableState state, Instant start, Instant end) {}
+
+    public record TableTimelineDto(String code, List<SegmentDto> segments) {}
+
+    /** Une heure de service. `hour` est l'heure locale du restaurant (12 = de 12 h à 13 h). */
+    public record HourDto(int hour, double occupancyRate, Integer averageWaitSeconds, int seatings) {}
+
+    /** Une journée de service. `from` est minuit, heure du restaurant ; `to` s'arrête à maintenant pour aujourd'hui. */
+    public record DayDto(LocalDate date, Instant from, Instant to, int tablesTotal, List<TableTimelineDto> tables,
+                         List<HourDto> hours, Integer averageWaitSeconds, Integer longestWaitSeconds,
+                         String longestWaitTable, Instant longestWaitAt, int seatings,
+                         Integer averageToClearSeconds, double peakOccupancyRate) {}
+
+    public record DaySummaryDto(LocalDate date, Integer averageWaitSeconds, Integer longestWaitSeconds, int seatings,
+                                double peakOccupancyRate, Integer averageToClearSeconds) {}
 
     public record LoginRequest(@NotBlank @Email String email, @NotBlank String password) {}
 

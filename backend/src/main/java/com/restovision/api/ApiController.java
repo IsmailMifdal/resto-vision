@@ -1,5 +1,10 @@
 package com.restovision.api;
 
+import com.restovision.api.Dtos.DayDto;
+import com.restovision.api.Dtos.DaySummaryDto;
+import java.time.LocalDate;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.web.bind.annotation.RequestParam;
 import com.restovision.api.Dtos.AlertDto;
 import com.restovision.api.Dtos.AlertRuleDto;
 import com.restovision.api.Dtos.AlertRuleUpdate;
@@ -66,6 +71,19 @@ public class ApiController {
     public AlertRuleDto updateRule(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id,
                                    @Valid @RequestBody AlertRuleUpdate update) {
         return queries.updateRule(restaurantOf(jwt), id, update);
+    }
+
+    /** Une journée de service table par table. Sans date : aujourd'hui. */
+    @GetMapping("/stats/day")
+    public DayDto day(@AuthenticationPrincipal Jwt jwt,
+                      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        return queries.day(restaurantOf(jwt), date);
+    }
+
+    /** Résumé des derniers jours, du plus ancien au plus récent. */
+    @GetMapping("/stats/days")
+    public List<DaySummaryDto> days(@AuthenticationPrincipal Jwt jwt, @RequestParam(defaultValue = "7") int count) {
+        return queries.lastDays(restaurantOf(jwt), count);
     }
 
     @GetMapping("/stats/today")

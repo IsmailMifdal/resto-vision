@@ -13,9 +13,9 @@ caméras IP -> edge (Python, YOLO) --MQTT--> backend (Spring Boot) --WebSocket--
 
 | Dossier | Rôle | État |
 | --- | --- | --- |
-| `edge/` | Détection, zones, état des tables, file d'attente, aperçu annoté, simulateur | V1 codée, 15 tests |
-| `backend/` | API, ingestion MQTT, règles d'alerte, statistiques, JWT | V1 codée, tests lancés par la CI |
-| `web/` | Écran salle en direct, dashboard gérant, dessin des zones | V1 codée |
+| `edge/` | Détection, zones, état des tables, file d'attente, aperçu annoté, simulateur | V1 codée, 17 tests |
+| `backend/` | API, ingestion MQTT, règles d'alerte, historique du service, JWT | V1 codée, 18 tests |
+| `web/` | Plan de salle en direct, frise du service pour le gérant, réglages, dessin des zones | V1 codée |
 | `infra/` + `docker-compose.yml` | PostgreSQL (TimescaleDB), Mosquitto, backend | prêt |
 
 Fonctionnalités réservées, pas encore codées : stock (caisse), anti-gaspillage, prédiction, rapport IA,
@@ -36,6 +36,9 @@ cd web && npm install && npm start
 cd edge && pip install paho-mqtt
 python -m restovision_edge --config config/edge.example.json --source simulate --publisher mqtt
 ```
+
+Le simulateur anime une salle de 8 tables et une file. Le restaurant de démonstration reçoit aussi une semaine
+de services fictifs (`DEMO_HISTORY=false` pour s'en passer), pour que l'écran « Service » ait un historique.
 
 Connexion : `demo@restovision.local` / `demo1234`. Les seuils du restaurant de démonstration sont courts
 (30 s non servi, 20 s à débarrasser, 4 personnes dans la file) pour voir des alertes en quelques minutes.

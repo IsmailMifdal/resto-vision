@@ -1,5 +1,8 @@
 package com.restovision.domain;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -41,6 +44,10 @@ public class Zone {
     private Integer estimatedWaitSeconds;
     private Instant updatedAt;
 
+    /** Contour de la zone dans l'image de la caméra, en pixels : "x,y;x,y;…". Sert à dessiner le plan de salle. */
+    @Column(length = 4000)
+    private String polygon;
+
     protected Zone() {}
 
     public Zone(Restaurant restaurant, String code, ZoneType type) {
@@ -68,4 +75,23 @@ public class Zone {
     public void setEstimatedWaitSeconds(Integer estimatedWaitSeconds) { this.estimatedWaitSeconds = estimatedWaitSeconds; }
     public Instant getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(Instant updatedAt) { this.updatedAt = updatedAt; }
+
+    /** Liste de points [x, y], ou null si le boîtier n'a pas encore envoyé le plan. */
+    public List<List<Double>> getPolygon() {
+        if (polygon == null || polygon.isBlank()) {
+            return null;
+        }
+        List<List<Double>> points = new ArrayList<>();
+        for (String point : polygon.split(";")) {
+            String[] xy = point.split(",");
+            points.add(List.of(Double.valueOf(xy[0]), Double.valueOf(xy[1])));
+        }
+        return points;
+    }
+
+    public void setPolygon(List<List<Double>> points) {
+        this.polygon = points.stream()
+                .map(point -> Math.round(point.get(0)) + "," + Math.round(point.get(1)))
+                .collect(Collectors.joining(";"));
+    }
 }

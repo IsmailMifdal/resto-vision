@@ -1,5 +1,9 @@
 package com.restovision.api;
 
+import com.restovision.api.Dtos.DayDto;
+import com.restovision.api.Dtos.DaySummaryDto;
+import com.restovision.stats.HistoryService;
+import java.time.LocalDate;
 import com.restovision.api.Dtos.AlertDto;
 import com.restovision.api.Dtos.AlertRuleDto;
 import com.restovision.api.Dtos.AlertRuleUpdate;
@@ -31,15 +35,18 @@ public class RestaurantQueryService {
     private final AlertRuleRepository rules;
     private final StatsService stats;
     private final LiveNotifier notifier;
+    private final HistoryService history;
 
     public RestaurantQueryService(RestaurantRepository restaurants, ZoneRepository zones, AlertRepository alerts,
-                                  AlertRuleRepository rules, StatsService stats, LiveNotifier notifier) {
+                                  AlertRuleRepository rules, StatsService stats, LiveNotifier notifier,
+                                  HistoryService history) {
         this.restaurants = restaurants;
         this.zones = zones;
         this.alerts = alerts;
         this.rules = rules;
         this.stats = stats;
         this.notifier = notifier;
+        this.history = history;
     }
 
     private Restaurant restaurant(String code) {
@@ -83,6 +90,16 @@ public class RestaurantQueryService {
         rule.setThreshold(update.threshold());
         rule.setEnabled(update.enabled());
         return AlertRuleDto.of(rule);
+    }
+
+    @Transactional(readOnly = true)
+    public DayDto day(String restaurantCode, LocalDate date) {
+        return history.day(restaurant(restaurantCode), date);
+    }
+
+    @Transactional(readOnly = true)
+    public List<DaySummaryDto> lastDays(String restaurantCode, int count) {
+        return history.lastDays(restaurant(restaurantCode), Math.max(1, Math.min(31, count)));
     }
 
     @Transactional(readOnly = true)

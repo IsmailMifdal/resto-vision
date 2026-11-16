@@ -20,3 +20,6 @@ web/.angular/
 .idea/
 .vscode/
 .DS_Store
+# Fichiers de travail des outils de design
+.taste-skill/
+.playwright-cli/

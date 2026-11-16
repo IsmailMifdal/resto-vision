@@ -24,3 +24,4 @@ restovision:
     check-interval-ms: 5000
   demo:
     enabled: ${DEMO_DATA:true}   # crée le restaurant "demo" et un compte de test
+    history: ${DEMO_HISTORY:true}   # ajoute une semaine de services fictifs au restaurant "demo"

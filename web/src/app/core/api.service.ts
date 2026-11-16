@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { API_URL } from './config';
-import { Alert, AlertRule, Session, Stats, Zone } from './models';
+import { Alert, AlertRule, Day, DaySummary, Session, Stats, Zone } from './models';
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
@@ -31,5 +31,13 @@ export class ApiService {
   }
   stats(): Observable<Stats> {
     return this.http.get<Stats>(`${API_URL}/stats/today`);
+  }
+  /** Une journée de service table par table. `date` au format AAAA-MM-JJ. */
+  day(date: string): Observable<Day> {
+    return this.http.get<Day>(`${API_URL}/stats/day`, { params: { date } });
+  }
+  /** Résumé des derniers jours, du plus ancien au plus récent, aujourd'hui compris. */
+  days(count: number): Observable<DaySummary[]> {
+    return this.http.get<DaySummary[]>(`${API_URL}/stats/days`, { params: { count } });
   }
 }

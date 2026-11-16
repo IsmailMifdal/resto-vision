@@ -5,8 +5,11 @@ import argparse
 import time
 
 from .config import load_config
-from .pipeline import Pipeline
+from .pipeline import Pipeline, layout_event
 from .publisher import MqttPublisher, StdoutPublisher
+
+
+LAYOUT_PERIOD = 300.0  # secondes entre deux envois du plan des zones
 
 
 def main() -> None:
@@ -36,6 +39,16 @@ def main() -> None:
     publisher = (MqttPublisher(config.mqtt_host, config.mqtt_port, config.topic)
                  if args.publisher == "mqtt" else StdoutPublisher())
     views = []
+    layout_sent = 0.0
+
+    def announce_layout() -> None:
+        # Le broker garde ce message pour tout backend qui se connecte. On le renvoie toutes les 5 minutes
+        # au cas où le broker aurait redémarré.
+        nonlocal layout_sent
+        if time.time() - layout_sent >= LAYOUT_PERIOD:
+            layout_sent = time.time()
+            publisher.publish_layout(layout_event(config, layout_sent))
+
     try:
         if args.source == "simulate":
             from .simulate import scenario
@@ -44,6 +57,7 @@ def main() -> None:
             for detections, elapsed in scenario(config, cycle_seconds=args.cycle_seconds, cycles=args.cycles):
                 # En temps réel, on horodate avec l'heure réelle pour que les alertes du backend soient justes.
                 now = time.time() if args.speed == 1 else start + elapsed
+                announce_layout()
                 for event in pipeline.process(detections, now):
                     publisher.publish(event)
                 if args.speed > 0:
@@ -63,6 +77,7 @@ def main() -> None:
             detector = YoloDetector(config.weights, config.confidence, labels, config.imgsz)
             for frame, now in frames(args.source, config.fps, realtime=args.realtime, loop=args.loop):
                 detections = detector.detect(frame)
+                announce_layout()
                 for event in pipeline.process(detections, now):
                     publisher.publish(event)
                 if views:

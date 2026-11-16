@@ -10,6 +10,8 @@ export interface Zone {
   persons: number;
   dishes: number;
   estimatedWaitSeconds: number | null;
+  /** Contour de la zone dans l'image de la caméra, ou null tant que le boîtier ne l'a pas envoyé. */
+  polygon: [number, number][] | null;
 }
 
 export interface Alert {
@@ -38,6 +40,47 @@ export interface Stats {
   seatingsToday: number;
   queuePersons: number;
   queueWaitSeconds: number;
+}
+
+/** Un état tenu par une table. Les périodes « libre » ne sont pas listées. */
+export interface Segment {
+  state: TableState;
+  start: string;
+  end: string;
+}
+
+export interface HourStats {
+  /** Heure du restaurant : 12 = de 12 h à 13 h. */
+  hour: number;
+  occupancyRate: number;
+  averageWaitSeconds: number | null;
+  seatings: number;
+}
+
+/** Une journée de service. `from` est minuit, heure du restaurant. */
+export interface Day {
+  date: string;
+  from: string;
+  to: string;
+  tablesTotal: number;
+  tables: { code: string; segments: Segment[] }[];
+  hours: HourStats[];
+  averageWaitSeconds: number | null;
+  longestWaitSeconds: number | null;
+  longestWaitTable: string | null;
+  longestWaitAt: string | null;
+  seatings: number;
+  averageToClearSeconds: number | null;
+  peakOccupancyRate: number;
+}
+
+export interface DaySummary {
+  date: string;
+  averageWaitSeconds: number | null;
+  longestWaitSeconds: number | null;
+  seatings: number;
+  peakOccupancyRate: number;
+  averageToClearSeconds: number | null;
 }
 
 export interface Session {
@@ -78,4 +121,18 @@ export function formatDuration(seconds: number): string {
   const minutes = Math.floor(seconds / 60);
   if (minutes < 60) return `${minutes} min`;
   return `${Math.floor(minutes / 60)} h ${String(minutes % 60).padStart(2, '0')}`;
+}
+
+/** Durée d'un indicateur : « 6 min 20 », ou un tiret quand il n'y a rien à mesurer. */
+export function formatWait(seconds: number | null): string {
+  if (seconds === null) return '–';
+  if (seconds < 60) return `${seconds} s`;
+  const rest = seconds % 60;
+  return rest ? `${Math.floor(seconds / 60)} min ${String(rest).padStart(2, '0')}` : `${seconds / 60} min`;
+}
+
+/** Heure du restaurant (« 12:52 ») d'un instant, à partir du minuit de la journée renvoyé par le serveur. */
+export function clockTime(dayStart: string, instant: string): string {
+  const minutes = Math.floor((Date.parse(instant) - Date.parse(dayStart)) / 60000);
+  return `${String(Math.floor(minutes / 60) % 24).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
 }
