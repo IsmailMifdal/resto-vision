@@ -29,7 +29,8 @@ class MqttPublisher:
     et repartent dès que la connexion revient. Le plan des zones part sur un sujet à part,
     conservé par le broker (retain) : un backend qui se connecte plus tard le reçoit quand même."""
 
-    def __init__(self, host: str, port: int, topic: str, client=None, max_buffer: int = 10_000):
+    def __init__(self, host: str, port: int, topic: str, client=None, max_buffer: int = 10_000,
+                 username: str | None = None, password: str | None = None, tls: bool = False):
         self.topic = topic
         self.layout_topic = topic.rsplit("/", 1)[0] + "/layout"
         self.buffer: deque[tuple[str, str, bool]] = deque(maxlen=max_buffer)
@@ -38,6 +39,10 @@ class MqttPublisher:
 
             client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
             client.on_connect = lambda *_: self.flush()
+            if username:
+                client.username_pw_set(username, password)
+            if tls:
+                client.tls_set()  # certificats de confiance du système
             client.connect_async(host, port)
             client.loop_start()
         self.client = client

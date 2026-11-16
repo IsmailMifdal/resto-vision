@@ -93,10 +93,19 @@ cd backend && mvn verify
 cd web && npx ng build
 ```
 
-## Avant la production
+## Mise en production
 
-- Remplacer `ddl-auto: update` par des migrations Flyway.
-- Vérifier le JWT à la connexion WebSocket (`WebSocketConfig`).
-- Identifiants et TLS par boîtier sur le broker MQTT (`infra/mosquitto.conf` accepte tout le monde).
-- Définir `JWT_SECRET` et `DEMO_DATA=false`.
-- RGPD : affichage dans le restaurant, analyse d'impact, pas de reconnaissance faciale.
+Lancer le backend avec le profil `prod` (`--spring.profiles.active=prod`). Il refuse de démarrer s'il manque
+une de ces variables : `DB_URL`, `DB_USER`, `DB_PASSWORD`, `JWT_SECRET` (32 caractères au moins), `MQTT_URL`,
+`MQTT_USER`, `MQTT_PASSWORD`, `CORS_ORIGINS`. Les données de démonstration sont désactivées.
+
+- **Base** : le schéma est géré par Flyway (`backend/src/main/resources/db/migration`). Toute évolution passe
+  par un nouveau fichier `V2__...sql`.
+- **Écrans en direct** : le WebSocket exige le jeton de connexion, et un écran ne reçoit que son restaurant.
+- **Broker MQTT** : `infra/mosquitto.prod.conf` et `infra/mosquitto.prod.acl` donnent un compte par boîtier,
+  limité aux sujets de son restaurant, sur une liaison chiffrée. Côté boîtier, dans `edge.json` :
+  `"mqtt": { "host": "...", "port": 8883, "tls": true, "username": "boitier-demo" }`, et le mot de passe dans
+  la variable `RESTOVISION_MQTT_PASSWORD`.
+- **RGPD** : affichage dans le restaurant, analyse d'impact, pas de reconnaissance faciale.
+
+Reste à faire avant un vrai déploiement : servir l'application web en HTTPS derrière un proxy, et sauvegarder la base.

@@ -36,7 +36,8 @@ def main() -> None:
         calibrate(config, args.source, args.calibrate)
         return
     pipeline = Pipeline(config)
-    publisher = (MqttPublisher(config.mqtt_host, config.mqtt_port, config.topic)
+    publisher = (MqttPublisher(config.mqtt_host, config.mqtt_port, config.topic, username=config.mqtt_username,
+                               password=config.mqtt_password, tls=config.mqtt_tls)
                  if args.publisher == "mqtt" else StdoutPublisher())
     views = []
     layout_sent = 0.0

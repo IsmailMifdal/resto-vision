@@ -29,6 +29,7 @@ export class LiveService {
     const base = `/topic/restaurants/${session.restaurantCode}`;
     this.client = new Client({
       brokerURL: WS_URL,
+      connectHeaders: { Authorization: `Bearer ${session.token}` },
       reconnectDelay: 3000,
       onConnect: () => {
         this.connected.set(true);

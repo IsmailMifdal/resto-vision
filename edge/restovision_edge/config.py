@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import os
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -18,6 +19,9 @@ class EdgeConfig:
     mqtt_host: str = "localhost"
     mqtt_port: int = 1883
     topic_prefix: str = "restovision"
+    mqtt_username: str | None = None
+    mqtt_password: str | None = None
+    mqtt_tls: bool = False
     weights: str = "yolo11n.pt"
     confidence: float = 0.35
     fps: float = 5.0
@@ -43,6 +47,10 @@ def load_config(path: str | Path) -> EdgeConfig:
         mqtt_host=mqtt.get("host", "localhost"),
         mqtt_port=mqtt.get("port", 1883),
         topic_prefix=mqtt.get("topicPrefix", "restovision"),
+        # Le mot de passe peut rester hors du fichier : variable RESTOVISION_MQTT_PASSWORD.
+        mqtt_username=mqtt.get("username"),
+        mqtt_password=mqtt.get("password") or os.environ.get("RESTOVISION_MQTT_PASSWORD"),
+        mqtt_tls=bool(mqtt.get("tls", False)),
         weights=model.get("weights", "yolo11n.pt"),
         confidence=model.get("confidence", 0.35),
         fps=model.get("fps", 5.0),

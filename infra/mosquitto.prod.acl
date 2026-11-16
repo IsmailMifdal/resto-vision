@@ -1,0 +1,9 @@
+# Le backend lit tout, n'écrit rien.
+user backend
+topic read restovision/+/events
+topic read restovision/+/layout
+
+# Un bloc par boîtier : il n'écrit que pour son restaurant. Dupliquer pour chaque boîtier.
+user boitier-demo
+topic write restovision/demo/events
+topic write restovision/demo/layout
