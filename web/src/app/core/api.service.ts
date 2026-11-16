@@ -2,7 +2,9 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { API_URL } from './config';
-import { Alert, AlertRule, Day, DaySummary, Forecast, Report, Session, Stats, Zone } from './models';
+import {
+  Alert, AlertRule, Day, DaySummary, Dish, Forecast, ImportResult, Ingredient, Report, Session, Stats, Stock, Zone,
+} from './models';
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
@@ -35,6 +37,31 @@ export class ApiService {
   /** Une journée de service table par table. `date` au format AAAA-MM-JJ. */
   day(date: string): Observable<Day> {
     return this.http.get<Day>(`${API_URL}/stats/day`, { params: { date } });
+  }
+  stock(): Observable<Stock> {
+    return this.http.get<Stock>(`${API_URL}/stock`);
+  }
+  addIngredient(item: Pick<Ingredient, 'name' | 'unit' | 'quantity' | 'threshold'>): Observable<Ingredient> {
+    return this.http.post<Ingredient>(`${API_URL}/stock/ingredients`, item);
+  }
+  updateIngredient(item: Ingredient): Observable<Ingredient> {
+    const { name, unit, quantity, threshold } = item;
+    return this.http.put<Ingredient>(`${API_URL}/stock/ingredients/${item.id}`, { name, unit, quantity, threshold });
+  }
+  deleteIngredient(id: string): Observable<void> {
+    return this.http.delete<void>(`${API_URL}/stock/ingredients/${id}`);
+  }
+  addDish(dish: { name: string; lines: { ingredientId: string; quantity: number }[] }): Observable<Dish> {
+    return this.http.post<Dish>(`${API_URL}/stock/dishes`, dish);
+  }
+  deleteDish(id: string): Observable<void> {
+    return this.http.delete<void>(`${API_URL}/stock/dishes/${id}`);
+  }
+  /** Envoie un export de ventes de la caisse (CSV). */
+  importSales(file: File): Observable<ImportResult> {
+    const form = new FormData();
+    form.append('file', file);
+    return this.http.post<ImportResult>(`${API_URL}/stock/sales`, form);
   }
   /** Affluence attendue demain. */
   forecast(): Observable<Forecast> {

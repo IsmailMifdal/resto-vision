@@ -13,6 +13,10 @@ spring:
     baseline-on-migrate: true   # une base créée avant Flyway est reprise telle quelle
     baseline-version: 0
 
+server:
+  error:
+    include-message: always   # les refus sont rédigés pour l'utilisateur (« Ce fichier a déjà été importé »)
+
 restovision:
   timezone: Europe/Paris
   jwt:

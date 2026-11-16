@@ -17,10 +17,6 @@ public class ComingSoonController {
                 .body(Map.of("feature", feature, "plannedFor", version));
     }
 
-    @GetMapping("/stock")
-    public ResponseEntity<Map<String, String>> stock() {
-        return planned("Stock synchronisé avec la caisse", "V2");
-    }
 
     @GetMapping("/waste")
     public ResponseEntity<Map<String, String>> waste() {

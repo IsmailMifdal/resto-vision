@@ -36,7 +36,7 @@ import { Component } from '@angular/core';
 })
 export class RoadmapPage {
   readonly items = [
-    { version: 'V2', title: 'Stock synchronisé avec la caisse', what: 'Le stock baisse à chaque vente, à partir des recettes.' },
+    { version: 'V2', title: 'Caisse connectée en direct', what: 'Le stock, aujourd’hui mis à jour par un fichier de ventes, suivra la caisse vente après vente.' },
     { version: 'V2', title: 'Anti-gaspillage', what: 'Repérer les assiettes qui reviennent pleines.' },
     { version: 'V2', title: 'Prévision avec météo et réservations', what: 'La prévision du lendemain, déjà visible dans Service, affinée par la météo et les réservations.' },
     { version: 'V2', title: 'Commande fournisseur', what: 'Un bon de commande préparé, à valider en un clic.' },

@@ -68,6 +68,20 @@ backend ; le rédacteur ne fait que les mettre en phrases.
 - Le rapport d'une journée terminée est rédigé une fois puis gardé en base. Le gérant peut le faire rédiger
   à nouveau. La journée en cours est toujours rédigée sans IA.
 
+## Stock
+
+L'écran « Stock » suit les ingrédients à partir des ventes de la caisse. La caméra ne compte pas les plats :
+ce serait peu fiable.
+
+1. Saisir les ingrédients, avec leur quantité et un seuil de commande.
+2. Saisir la recette de chaque plat. Le nom du plat doit être celui que la caisse écrit dans ses exports
+   (majuscules et accents ne comptent pas).
+3. Importer l'export de ventes de la caisse en CSV. Trois colonnes suffisent, dans n'importe quel ordre :
+   `date`, `plat`, `quantite`. Séparateur `;` ou `,`. Un exemple : `infra/ventes-exemple.csv`.
+
+Chaque plat vendu retire sa recette du stock. L'écran signale les ingrédients passés sous leur seuil, les plats
+vendus sans recette et les lignes illisibles. Un même fichier ne peut pas être compté deux fois.
+
 ## Prévision d'affluence
 
 L'écran « Service » affiche l'affluence attendue le lendemain, heure par heure. C'est la moyenne des 28 derniers

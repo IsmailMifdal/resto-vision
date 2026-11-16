@@ -83,6 +83,40 @@ export interface DaySummary {
   averageToClearSeconds: number | null;
 }
 
+export interface Ingredient {
+  id: string;
+  name: string;
+  unit: string;
+  quantity: number;
+  /** Sous ce seuil, l'ingrédient est à commander. */
+  threshold: number;
+  low: boolean;
+  updatedAt: string;
+}
+
+export interface Dish {
+  id: string;
+  name: string;
+  lines: { ingredientId: string; ingredient: string; unit: string; quantity: number }[];
+}
+
+export interface Stock {
+  ingredients: Ingredient[];
+  dishes: Dish[];
+  lastImport: { fileName: string; importedAt: string; lines: number } | null;
+}
+
+/** Bilan d'un import de ventes de la caisse. */
+export interface ImportResult {
+  fileName: string;
+  lines: number;
+  dishesSold: number;
+  usage: { ingredient: string; unit: string; used: number; remaining: number; low: boolean }[];
+  /** Plats vendus sans recette : ils n'ont rien retiré du stock. */
+  unknownDishes: { name: string; quantity: number }[];
+  problems: { line: number; message: string }[];
+}
+
 /** Affluence attendue un jour à venir, à partir de l'historique. */
 export interface Forecast {
   date: string;
