@@ -1,5 +1,6 @@
 package com.restovision.api;
 
+import com.restovision.api.Dtos.ForecastDto;
 import com.restovision.api.Dtos.ReportDto;
 import com.restovision.api.Dtos.DayDto;
 import com.restovision.api.Dtos.DaySummaryDto;
@@ -99,6 +100,13 @@ public class ApiController {
     public ReportDto rewriteDailyReport(@AuthenticationPrincipal Jwt jwt,
                                         @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
         return queries.dailyReport(restaurantOf(jwt), date, true);
+    }
+
+    /** Affluence attendue heure par heure. Sans date : demain. */
+    @GetMapping("/forecast")
+    public ForecastDto forecast(@AuthenticationPrincipal Jwt jwt,
+                                @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        return queries.forecast(restaurantOf(jwt), date);
     }
 
     @GetMapping("/stats/today")

@@ -68,6 +68,12 @@ backend ; le rédacteur ne fait que les mettre en phrases.
 - Le rapport d'une journée terminée est rédigé une fois puis gardé en base. Le gérant peut le faire rédiger
   à nouveau. La journée en cours est toujours rédigée sans IA.
 
+## Prévision d'affluence
+
+L'écran « Service » affiche l'affluence attendue le lendemain, heure par heure. C'est la moyenne des 28 derniers
+jours, où le même jour de la semaine compte trois fois plus. Elle ne tient compte ni de la météo ni des
+réservations, et l'écran indique sur combien de jours elle repose.
+
 ## Avec une vraie vidéo
 
 ```bash

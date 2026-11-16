@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { API_URL } from './config';
-import { Alert, AlertRule, Day, DaySummary, Report, Session, Stats, Zone } from './models';
+import { Alert, AlertRule, Day, DaySummary, Forecast, Report, Session, Stats, Zone } from './models';
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
@@ -35,6 +35,10 @@ export class ApiService {
   /** Une journée de service table par table. `date` au format AAAA-MM-JJ. */
   day(date: string): Observable<Day> {
     return this.http.get<Day>(`${API_URL}/stats/day`, { params: { date } });
+  }
+  /** Affluence attendue demain. */
+  forecast(): Observable<Forecast> {
+    return this.http.get<Forecast>(`${API_URL}/forecast`);
   }
   report(date: string): Observable<Report> {
     return this.http.get<Report>(`${API_URL}/reports/daily`, { params: { date } });

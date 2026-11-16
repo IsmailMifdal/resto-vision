@@ -38,7 +38,7 @@ export class RoadmapPage {
   readonly items = [
     { version: 'V2', title: 'Stock synchronisé avec la caisse', what: 'Le stock baisse à chaque vente, à partir des recettes.' },
     { version: 'V2', title: 'Anti-gaspillage', what: 'Repérer les assiettes qui reviennent pleines.' },
-    { version: 'V2', title: 'Prédiction d’affluence', what: 'Prévoir le rush avec l’historique, la météo et le jour.' },
+    { version: 'V2', title: 'Prévision avec météo et réservations', what: 'La prévision du lendemain, déjà visible dans Service, affinée par la météo et les réservations.' },
     { version: 'V2', title: 'Commande fournisseur', what: 'Un bon de commande préparé, à valider en un clic.' },
     { version: 'V2', title: 'Rapport envoyé chaque soir', what: 'Le rapport du jour, déjà visible dans Service, envoyé par e-mail au gérant.' },
     { version: 'V3', title: 'Alertes vocales', what: 'Sur oreillette ou montre, sans regarder un écran.' },

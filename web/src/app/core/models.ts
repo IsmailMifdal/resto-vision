@@ -83,6 +83,17 @@ export interface DaySummary {
   averageToClearSeconds: number | null;
 }
 
+/** Affluence attendue un jour à venir, à partir de l'historique. */
+export interface Forecast {
+  date: string;
+  /** Jours d'historique utilisés, dont `sameWeekdayDays` du même jour de la semaine. */
+  basedOnDays: number;
+  sameWeekdayDays: number;
+  hours: { hour: number; expectedSeatings: number; expectedOccupancyRate: number }[];
+  peakHour: number | null;
+  expectedSeatings: number;
+}
+
 /** Le rapport d'une journée, en phrases. */
 export interface Report {
   date: string;

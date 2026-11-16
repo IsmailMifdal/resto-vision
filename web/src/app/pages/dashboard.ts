@@ -2,7 +2,7 @@ import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular
 import { Bar, BarChart } from '../components/bar-chart';
 import { ServiceTimeline } from '../components/service-timeline';
 import { ApiService } from '../core/api.service';
-import { Day, DaySummary, Report, clockTime, formatWait } from '../core/models';
+import { Day, DaySummary, Forecast, Report, clockTime, formatWait } from '../core/models';
 import { SessionService } from '../core/session.service';
 
 const minutes = (seconds: number) =>
@@ -106,6 +106,21 @@ const MINUTE_STEPS = [60, 120, 300, 600, 900, 1800];
     } @else if (!error()) {
       <section class="card"><p class="muted">Chargement du service…</p></section>
     }
+
+    @if (forecast(); as f) {
+      <section class="card forecast">
+        <div class="card-head">
+          <h2>Prévision pour demain</h2>
+          <span class="muted small">{{ forecastBasis(f) }}</span>
+        </div>
+        @if (f.hours.length) {
+          <p>{{ forecastSentence(f) }}</p>
+          <app-bar-chart [bars]="forecastBars()" [format]="percent" [steps]="[0.25]" [ceiling]="1" tone="forecast" />
+        } @else {
+          <p class="empty">Pas encore assez d’historique pour prévoir. La prévision apparaît après une première journée de service.</p>
+        }
+      </section>
+    }
   `,
   styles: `
     .notice { margin-bottom: 14px; }
@@ -122,6 +137,9 @@ const MINUTE_STEPS = [60, 120, 300, 600, 900, 1800];
     .kpis .lead strong { font-size: 32px; line-height: 38px; }
     .kpis .small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
+    .forecast { margin-top: var(--gap); }
+    .forecast app-bar-chart { display: block; max-width: 680px; }
+    .forecast > p:not(.empty) { margin-bottom: 20px; max-width: 86ch; }
     .report { margin-bottom: var(--gap); }
     .report p { max-width: 86ch; font-size: 16px; line-height: 26px; }
     .report button { margin-top: 16px; }
@@ -158,6 +176,7 @@ export class DashboardPage implements OnInit, OnDestroy {
   readonly selected = signal<string | null>(null);
   readonly day = signal<Day | null>(null);
   readonly report = signal<Report | null>(null);
+  readonly forecast = signal<Forecast | null>(null);
   readonly rewriting = signal(false);
   readonly canRewrite = inject(SessionService).session()?.role !== 'STAFF';
   readonly error = signal<string | null>(null);
@@ -203,6 +222,13 @@ export class DashboardPage implements OnInit, OnDestroy {
       title: `Clients installés entre ${hour.hour} h et ${hour.hour + 1} h`,
     })),
   );
+  readonly forecastBars = computed<Bar[]>(() =>
+    (this.forecast()?.hours ?? []).map((hour) => ({
+      label: `${hour.hour} h`,
+      value: hour.expectedOccupancyRate,
+      title: `${hour.hour} h – ${hour.hour + 1} h · environ ${Math.round(hour.expectedSeatings)} tablées`,
+    })),
+  );
   readonly week = computed<Bar[]>(() =>
     this.days().map((item) => ({
       label: this.dayLabel(item.date, true),
@@ -213,6 +239,7 @@ export class DashboardPage implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.loadWeek(true);
+    this.api.forecast().subscribe({ next: (forecast) => this.forecast.set(forecast), error: () => undefined });
     // La journée en cours avance : on la relit toutes les 30 secondes.
     this.timer = setInterval(() => {
       if (this.isToday()) this.loadWeek(false);
@@ -226,6 +253,21 @@ export class DashboardPage implements OnInit, OnDestroy {
   select(date: string): void {
     this.selected.set(date);
     this.loadDay(date);
+  }
+
+  forecastSentence(forecast: Forecast): string {
+    const day = new Date(forecast.date + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+    const peak = forecast.hours.find((hour) => hour.hour === forecast.peakHour);
+    const busiest = peak ? `, avec un pic vers ${peak.hour} h (${percent(peak.expectedOccupancyRate)} des tables occupées)` : '';
+    return `${day.charAt(0).toUpperCase() + day.slice(1)} : environ ${forecast.expectedSeatings} tablées attendues${busiest}.`;
+  }
+
+  /** Sur quoi repose la prévision, pour qu'on sache quel crédit lui donner. */
+  forecastBasis(forecast: Forecast): string {
+    if (!forecast.basedOnDays) return 'Estimation';
+    const days = `${forecast.basedOnDays} ${forecast.basedOnDays > 1 ? 'jours' : 'jour'} d’historique`;
+    const same = forecast.sameWeekdayDays ? `, dont ${forecast.sameWeekdayDays} même jour de la semaine` : '';
+    return `Estimation sur ${days}${same}. Sans météo ni réservations.`;
   }
 
   /** D'où vient le texte, pour que le gérant sache ce qu'il lit. */

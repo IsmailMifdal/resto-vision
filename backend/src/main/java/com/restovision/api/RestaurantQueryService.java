@@ -1,5 +1,7 @@
 package com.restovision.api;
 
+import com.restovision.api.Dtos.ForecastDto;
+import com.restovision.forecast.ForecastService;
 import com.restovision.api.Dtos.ReportDto;
 import com.restovision.report.DailyReportService;
 import com.restovision.api.Dtos.DayDto;
@@ -39,10 +41,12 @@ public class RestaurantQueryService {
     private final LiveNotifier notifier;
     private final HistoryService history;
     private final DailyReportService dailyReports;
+    private final ForecastService forecasts;
 
     public RestaurantQueryService(RestaurantRepository restaurants, ZoneRepository zones, AlertRepository alerts,
                                   AlertRuleRepository rules, StatsService stats, LiveNotifier notifier,
-                                  HistoryService history, DailyReportService dailyReports) {
+                                  HistoryService history, DailyReportService dailyReports,
+                                  ForecastService forecasts) {
         this.restaurants = restaurants;
         this.zones = zones;
         this.alerts = alerts;
@@ -51,6 +55,7 @@ public class RestaurantQueryService {
         this.notifier = notifier;
         this.history = history;
         this.dailyReports = dailyReports;
+        this.forecasts = forecasts;
     }
 
     private Restaurant restaurant(String code) {
@@ -109,6 +114,11 @@ public class RestaurantQueryService {
     @Transactional
     public ReportDto dailyReport(String restaurantCode, LocalDate date, boolean regenerate) {
         return dailyReports.report(restaurant(restaurantCode), date, regenerate);
+    }
+
+    @Transactional(readOnly = true)
+    public ForecastDto forecast(String restaurantCode, LocalDate date) {
+        return forecasts.forecast(restaurant(restaurantCode), date);
     }
 
     @Transactional(readOnly = true)

@@ -68,6 +68,8 @@ export function niceScale(maximum: number, steps: number[]): { max: number; tick
     .col:disabled { opacity: 1; }
     .bar { width: min(100%, 28px); border-radius: 4px 4px 0 0; background: #e6e2dc; }
     .bar[data-tone='waiting'] { background: var(--waiting); }
+    /* Une prévision n'est pas une mesure : barre vide, seulement son contour. */
+    .bar[data-tone='forecast'] { background: transparent; box-shadow: inset 0 0 0 1.5px #e6e2dc; }
     /* Avec un jour choisi, les autres barres s'effacent : la couleur suit la sélection, pas le rang. */
     .pickable .col:not(.selected) .bar { opacity: 0.4; }
     .tip { display: none; position: absolute; bottom: calc(100% - 26px); left: 50%; z-index: 3; background: var(--raised); border-radius: 8px; padding: 6px 10px; white-space: nowrap; text-align: left; font-size: 12px; line-height: 16px; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5); pointer-events: none; }
@@ -85,7 +87,7 @@ export class BarChart {
   readonly format = input.required<(value: number) => string>();
   /** Pas possibles entre deux graduations, du plus petit au plus grand. */
   readonly steps = input.required<number[]>();
-  readonly tone = input<'ink' | 'waiting'>('ink');
+  readonly tone = input<'ink' | 'waiting' | 'forecast'>('ink');
   /** Plafond imposé (1 pour un taux) ; sinon l'échelle suit le maximum des barres. */
   readonly ceiling = input<number | null>(null);
   readonly selected = input<number | null>(null);

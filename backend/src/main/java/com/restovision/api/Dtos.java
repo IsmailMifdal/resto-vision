@@ -67,6 +67,12 @@ public final class Dtos {
     public record ReportDto(LocalDate date, String text, DailyReport.Source source, Instant generatedAt,
                             boolean partial, boolean aiAvailable) {}
 
+    public record ForecastHourDto(int hour, double expectedSeatings, double expectedOccupancyRate) {}
+
+    /** Affluence attendue un jour à venir. `basedOnDays` : jours d'historique utilisés, dont `sameWeekdayDays` du même jour de la semaine. */
+    public record ForecastDto(LocalDate date, int basedOnDays, int sameWeekdayDays, List<ForecastHourDto> hours,
+                              Integer peakHour, int expectedSeatings) {}
+
     public record LoginRequest(@NotBlank @Email String email, @NotBlank String password) {}
 
     public record LoginResponse(String token, String restaurantCode, String restaurantName, String role) {}

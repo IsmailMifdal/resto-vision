@@ -27,10 +27,6 @@ public class ComingSoonController {
         return planned("Anti-gaspillage", "V2");
     }
 
-    @GetMapping("/forecast")
-    public ResponseEntity<Map<String, String>> forecast() {
-        return planned("Prédiction d'affluence et commande fournisseur", "V2");
-    }
 
 
     @GetMapping("/sites")
