@@ -40,7 +40,7 @@ export class RoadmapPage {
     { version: 'V2', title: 'Anti-gaspillage', what: 'Repérer les assiettes qui reviennent pleines.' },
     { version: 'V2', title: 'Prédiction d’affluence', what: 'Prévoir le rush avec l’historique, la météo et le jour.' },
     { version: 'V2', title: 'Commande fournisseur', what: 'Un bon de commande préparé, à valider en un clic.' },
-    { version: 'V2', title: 'Rapport quotidien', what: 'Le résumé du service, rédigé et envoyé au gérant.' },
+    { version: 'V2', title: 'Rapport envoyé chaque soir', what: 'Le rapport du jour, déjà visible dans Service, envoyé par e-mail au gérant.' },
     { version: 'V3', title: 'Alertes vocales', what: 'Sur oreillette ou montre, sans regarder un écran.' },
     { version: 'V3', title: 'Hygiène et sécurité', what: 'Sol mouillé, sortie de secours bloquée. Après validation juridique.' },
     { version: 'V3', title: 'Comparaison multi-sites', what: 'Les restaurants d’un même groupe côte à côte.' },

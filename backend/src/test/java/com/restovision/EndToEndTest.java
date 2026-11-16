@@ -1,5 +1,8 @@
 package com.restovision;
 
+import com.restovision.api.Dtos.ReportDto;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import com.restovision.api.Dtos.DayDto;
 import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -80,6 +83,25 @@ class EndToEndTest {
         assertThat(day.tables()).anyMatch(t -> t.code().equals("T6") && !t.segments().isEmpty());
         assertThat(queries.lastDays("demo", 7)).hasSize(7);
         assertThat(queries.lastDays("demo", 7).get(6).date()).isEqualTo(day.date());
+    }
+
+    @Test
+    void aFinishedDayGetsItsReportOnceAndKeepsIt() {
+        Instant yesterdayNoon = LocalDate.now(ZoneId.of("Europe/Paris")).minusDays(1).atTime(12, 0)
+                .atZone(ZoneId.of("Europe/Paris")).toInstant();
+        edge.handle(table("T5", "WAITING", "EMPTY", yesterdayNoon, 2, 0));
+        edge.handle(table("T5", "SERVED", "WAITING", yesterdayNoon.plusSeconds(420), 2, 2));
+        edge.handle(table("T5", "EMPTY", "SERVED", yesterdayNoon.plusSeconds(3600), 0, 0));
+        LocalDate yesterday = LocalDate.now(ZoneId.of("Europe/Paris")).minusDays(1);
+
+        ReportDto first = queries.dailyReport("demo", yesterday, false);
+        assertThat(first.partial()).isFalse();
+        assertThat(first.aiAvailable()).isFalse();   // pas de clé d'API dans les tests
+        assertThat(first.text()).contains("7 min avant d'être servis");
+        assertThat(queries.dailyReport("demo", yesterday, false).generatedAt()).isEqualTo(first.generatedAt());
+        assertThat(queries.dailyReport("demo", yesterday, true).generatedAt()).isAfterOrEqualTo(first.generatedAt());
+
+        assertThat(queries.dailyReport("demo", null, false).partial()).isTrue();
     }
 
     @Test

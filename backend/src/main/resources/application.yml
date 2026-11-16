@@ -25,6 +25,9 @@ restovision:
     topic: restovision/+/events
   cors:
     allowed-origins: ${CORS_ORIGINS:http://localhost:4200}
+  report:
+    anthropic-api-key: ${ANTHROPIC_API_KEY:}   # vide : le rapport est rédigé sans IA
+    model: ${REPORT_MODEL:claude-opus-5-5}
   alerts:
     check-interval-ms: 5000
   demo:

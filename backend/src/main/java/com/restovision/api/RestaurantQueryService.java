@@ -1,5 +1,7 @@
 package com.restovision.api;
 
+import com.restovision.api.Dtos.ReportDto;
+import com.restovision.report.DailyReportService;
 import com.restovision.api.Dtos.DayDto;
 import com.restovision.api.Dtos.DaySummaryDto;
 import com.restovision.stats.HistoryService;
@@ -36,10 +38,11 @@ public class RestaurantQueryService {
     private final StatsService stats;
     private final LiveNotifier notifier;
     private final HistoryService history;
+    private final DailyReportService dailyReports;
 
     public RestaurantQueryService(RestaurantRepository restaurants, ZoneRepository zones, AlertRepository alerts,
                                   AlertRuleRepository rules, StatsService stats, LiveNotifier notifier,
-                                  HistoryService history) {
+                                  HistoryService history, DailyReportService dailyReports) {
         this.restaurants = restaurants;
         this.zones = zones;
         this.alerts = alerts;
@@ -47,6 +50,7 @@ public class RestaurantQueryService {
         this.stats = stats;
         this.notifier = notifier;
         this.history = history;
+        this.dailyReports = dailyReports;
     }
 
     private Restaurant restaurant(String code) {
@@ -100,6 +104,11 @@ public class RestaurantQueryService {
     @Transactional(readOnly = true)
     public List<DaySummaryDto> lastDays(String restaurantCode, int count) {
         return history.lastDays(restaurant(restaurantCode), Math.max(1, Math.min(31, count)));
+    }
+
+    @Transactional
+    public ReportDto dailyReport(String restaurantCode, LocalDate date, boolean regenerate) {
+        return dailyReports.report(restaurant(restaurantCode), date, regenerate);
     }
 
     @Transactional(readOnly = true)

@@ -83,6 +83,19 @@ export interface DaySummary {
   averageToClearSeconds: number | null;
 }
 
+/** Le rapport d'une journée, en phrases. */
+export interface Report {
+  date: string;
+  text: string;
+  /** AI : rédigé par un modèle de langage. TEMPLATE : phrases toutes faites. */
+  source: 'AI' | 'TEMPLATE';
+  generatedAt: string;
+  /** Journée en cours : les chiffres bougent encore. */
+  partial: boolean;
+  /** Une clé d'API est configurée côté serveur. */
+  aiAvailable: boolean;
+}
+
 export interface Session {
   token: string;
   restaurantCode: string;

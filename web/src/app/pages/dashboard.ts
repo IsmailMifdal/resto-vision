@@ -2,7 +2,8 @@ import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular
 import { Bar, BarChart } from '../components/bar-chart';
 import { ServiceTimeline } from '../components/service-timeline';
 import { ApiService } from '../core/api.service';
-import { Day, DaySummary, clockTime, formatWait } from '../core/models';
+import { Day, DaySummary, Report, clockTime, formatWait } from '../core/models';
+import { SessionService } from '../core/session.service';
 
 const minutes = (seconds: number) =>
   seconds >= 7200 ? `${Math.round(seconds / 360) / 10} h` : `${Math.round(seconds / 60)} min`;
@@ -57,6 +58,19 @@ const MINUTE_STEPS = [60, 120, 300, 600, 900, 1800];
         </div>
       </section>
 
+      @if (report(); as r) {
+        <section class="card report">
+          <div class="card-head">
+            <h2>Le rapport du jour</h2>
+            <span class="muted small">{{ reportNote(r) }}</span>
+          </div>
+          <p>{{ r.text }}</p>
+          @if (canRewrite && !r.partial) {
+            <button (click)="rewrite()" [disabled]="rewriting()">{{ rewriting() ? 'Rédaction…' : 'Rédiger à nouveau' }}</button>
+          }
+        </section>
+      }
+
       <section class="card">
         <div class="card-head">
           <h2>Le service, table par table</h2>
@@ -108,6 +122,10 @@ const MINUTE_STEPS = [60, 120, 300, 600, 900, 1800];
     .kpis .lead strong { font-size: 32px; line-height: 38px; }
     .kpis .small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
+    .report { margin-bottom: var(--gap); }
+    .report p { max-width: 86ch; font-size: 16px; line-height: 26px; }
+    .report button { margin-top: 16px; }
+
     .legend { display: flex; flex-wrap: wrap; gap: 6px 18px; list-style: none; margin: 0; padding: 0; color: var(--muted); font-size: 12px; }
     .legend li { display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; }
     .swatch { width: 18px; height: 10px; border-radius: 3px; background: #3d3a36; }
@@ -139,6 +157,9 @@ export class DashboardPage implements OnInit, OnDestroy {
   readonly days = signal<DaySummary[]>([]);
   readonly selected = signal<string | null>(null);
   readonly day = signal<Day | null>(null);
+  readonly report = signal<Report | null>(null);
+  readonly rewriting = signal(false);
+  readonly canRewrite = inject(SessionService).session()?.role !== 'STAFF';
   readonly error = signal<string | null>(null);
 
   readonly selectedIndex = computed(() => {
@@ -207,6 +228,29 @@ export class DashboardPage implements OnInit, OnDestroy {
     this.loadDay(date);
   }
 
+  /** D'où vient le texte, pour que le gérant sache ce qu'il lit. */
+  reportNote(report: Report): string {
+    if (report.partial) return 'Journée en cours, mis à jour à chaque lecture';
+    if (report.source === 'AI') return 'Rédigé par IA à partir des chiffres ci-dessous';
+    return report.aiAvailable ? 'Rédigé sans IA' : 'Rédigé sans IA : aucune clé d’API configurée';
+  }
+
+  rewrite(): void {
+    const date = this.selected();
+    if (!date) return;
+    this.rewriting.set(true);
+    this.api.rewriteReport(date).subscribe({
+      next: (report) => {
+        if (this.selected() === date) this.report.set(report);
+        this.rewriting.set(false);
+      },
+      error: () => {
+        this.rewriting.set(false);
+        this.error.set('Le rapport n’a pas pu être rédigé à nouveau.');
+      },
+    });
+  }
+
   wait(seconds: number | null): string {
     return formatWait(seconds);
   }
@@ -248,6 +292,12 @@ export class DashboardPage implements OnInit, OnDestroy {
   }
 
   private loadDay(date: string): void {
+    this.api.report(date).subscribe({
+      next: (report) => {
+        if (this.selected() === date) this.report.set(report);
+      },
+      error: () => this.report.set(null),
+    });
     this.api.day(date).subscribe({
       next: (day) => {
         if (this.selected() === date) this.day.set(day);

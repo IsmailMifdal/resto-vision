@@ -56,6 +56,18 @@ Sans Docker, le backend tourne aussi sur une base en mémoire :
 `cd backend && mvn spring-boot:run -Dspring-boot.run.profiles=local` (il faut alors un broker MQTT local,
 ou `MQTT_ENABLED=false`).
 
+## Rapport du jour
+
+L'écran « Service » affiche un rapport en phrases pour chaque journée. Les chiffres sont calculés par le
+backend ; le rédacteur ne fait que les mettre en phrases.
+
+- Sans réglage, le rapport est rédigé avec des phrases fixes.
+- Avec la variable `ANTHROPIC_API_KEY`, le rapport d'une journée terminée est rédigé par Claude
+  (`REPORT_MODEL` pour changer de modèle, `claude-opus-5-5` par défaut). Si l'appel échoue, le rapport
+  revient aux phrases fixes.
+- Le rapport d'une journée terminée est rédigé une fois puis gardé en base. Le gérant peut le faire rédiger
+  à nouveau. La journée en cours est toujours rédigée sans IA.
+
 ## Avec une vraie vidéo
 
 ```bash

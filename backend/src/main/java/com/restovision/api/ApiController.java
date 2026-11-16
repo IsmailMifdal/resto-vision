@@ -1,5 +1,6 @@
 package com.restovision.api;
 
+import com.restovision.api.Dtos.ReportDto;
 import com.restovision.api.Dtos.DayDto;
 import com.restovision.api.Dtos.DaySummaryDto;
 import java.time.LocalDate;
@@ -84,6 +85,20 @@ public class ApiController {
     @GetMapping("/stats/days")
     public List<DaySummaryDto> days(@AuthenticationPrincipal Jwt jwt, @RequestParam(defaultValue = "7") int count) {
         return queries.lastDays(restaurantOf(jwt), count);
+    }
+
+    /** Le rapport du jour en phrases. Sans date : aujourd'hui. */
+    @GetMapping("/reports/daily")
+    public ReportDto dailyReport(@AuthenticationPrincipal Jwt jwt,
+                                 @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        return queries.dailyReport(restaurantOf(jwt), date, false);
+    }
+
+    /** Faire rédiger à nouveau le rapport d'un jour. Réservé au gérant. */
+    @PostMapping("/reports/daily")
+    public ReportDto rewriteDailyReport(@AuthenticationPrincipal Jwt jwt,
+                                        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        return queries.dailyReport(restaurantOf(jwt), date, true);
     }
 
     @GetMapping("/stats/today")

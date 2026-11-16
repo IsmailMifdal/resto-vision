@@ -1,5 +1,6 @@
 package com.restovision.api;
 
+import com.restovision.report.DailyReport;
 import java.time.LocalDate;
 import java.util.List;
 import com.restovision.domain.Alert;
@@ -61,6 +62,10 @@ public final class Dtos {
 
     public record DaySummaryDto(LocalDate date, Integer averageWaitSeconds, Integer longestWaitSeconds, int seatings,
                                 double peakOccupancyRate, Integer averageToClearSeconds) {}
+
+    /** Le rapport d'une journée. `partial` : journée en cours. `aiAvailable` : une clé d'API est configurée. */
+    public record ReportDto(LocalDate date, String text, DailyReport.Source source, Instant generatedAt,
+                            boolean partial, boolean aiAvailable) {}
 
     public record LoginRequest(@NotBlank @Email String email, @NotBlank String password) {}
 

@@ -28,6 +28,7 @@ services:
       DB_URL: jdbc:postgresql://db:5432/restovision
       MQTT_URL: tcp://mqtt:1883
       CORS_ORIGINS: http://localhost:4200,http://localhost:8088
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}   # facultatif : rapport du jour rédigé par IA
     ports: ["8080:8080"]
   web:
     build: ./web
