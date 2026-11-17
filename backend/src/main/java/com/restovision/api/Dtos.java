@@ -21,10 +21,12 @@ public final class Dtos {
     private Dtos() {}
 
     public record ZoneDto(String code, ZoneType type, TableState state, Instant stateSince,
-                          int persons, int dishes, Integer estimatedWaitSeconds, List<List<Double>> polygon) {
+                          int persons, int dishes, Integer estimatedWaitSeconds, List<List<Double>> polygon,
+                          Boolean blocked, Integer obstacles) {
         public static ZoneDto of(Zone z) {
             return new ZoneDto(z.getCode(), z.getType(), z.getState(), z.getStateSince(),
-                    z.getPersons(), z.getDishes(), z.getEstimatedWaitSeconds(), z.getPolygon());
+                    z.getPersons(), z.getDishes(), z.getEstimatedWaitSeconds(), z.getPolygon(),
+                    z.getType() == ZoneType.EXIT ? z.isBlocked() : null, z.getObstacles());
         }
     }
 

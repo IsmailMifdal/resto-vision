@@ -38,6 +38,8 @@ public class AlertService {
             case UNSERVED -> inStateFor(zone, TableState.WAITING, threshold, now);
             case TO_CLEAR -> inStateFor(zone, TableState.TO_CLEAR, threshold, now);
             case QUEUE_LENGTH -> zone.getType() == ZoneType.QUEUE && zone.getPersons() >= threshold;
+            case EXIT_BLOCKED -> zone.getType() == ZoneType.EXIT && zone.isBlocked() && zone.getStateSince() != null
+                    && Duration.between(zone.getStateSince(), now).getSeconds() >= threshold;
         };
     }
 
@@ -53,6 +55,7 @@ public class AlertService {
             case UNSERVED -> "Table " + zone.getCode() + " : clients non servis depuis " + minutes(zone, now) + " min";
             case TO_CLEAR -> "Table " + zone.getCode() + " : à débarrasser depuis " + minutes(zone, now) + " min";
             case QUEUE_LENGTH -> "File " + zone.getCode() + " : " + zone.getPersons() + " personnes en attente";
+            case EXIT_BLOCKED -> "Sortie de secours " + zone.getCode() + " encombrée depuis " + minutes(zone, now) + " min";
         };
     }
 

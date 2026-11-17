@@ -72,6 +72,8 @@ export class AnnouncerService {
         return `${name} à débarrasser.`;
       case 'QUEUE_LENGTH':
         return persons ? `File d'attente : ${persons} personnes.` : 'File d’attente trop longue.';
+      case 'EXIT_BLOCKED':
+        return 'Sortie de secours encombrée.';
     }
   }
 

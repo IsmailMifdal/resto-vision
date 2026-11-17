@@ -6,5 +6,7 @@ public enum AlertType {
     /** Table à débarrasser depuis `threshold` secondes. */
     TO_CLEAR,
     /** Au moins `threshold` personnes dans la file. */
-    QUEUE_LENGTH
+    QUEUE_LENGTH,
+    /** Sortie de secours encombrée depuis `threshold` secondes. */
+    EXIT_BLOCKED
 }

@@ -42,6 +42,10 @@ public class Zone {
     private int persons;
     private int dishes;
     private Integer estimatedWaitSeconds;
+
+    /** Sortie de secours : encombrée ou non, et combien d'objets la gênent. Nuls pour les autres zones. */
+    private Boolean blocked;
+    private Integer obstacles;
     private Instant updatedAt;
 
     /** Contour de la zone dans l'image de la caméra, en pixels : "x,y;x,y;…". Sert à dessiner le plan de salle. */
@@ -71,6 +75,14 @@ public class Zone {
     public void setPersons(int persons) { this.persons = persons; }
     public int getDishes() { return dishes; }
     public void setDishes(int dishes) { this.dishes = dishes; }
+    public boolean isBlocked() { return Boolean.TRUE.equals(blocked); }
+    public Integer getObstacles() { return obstacles; }
+
+    public void setExit(boolean blocked, int obstacles) {
+        this.blocked = blocked;
+        this.obstacles = obstacles;
+    }
+
     public Integer getEstimatedWaitSeconds() { return estimatedWaitSeconds; }
     public void setEstimatedWaitSeconds(Integer estimatedWaitSeconds) { this.estimatedWaitSeconds = estimatedWaitSeconds; }
     public Instant getUpdatedAt() { return updatedAt; }

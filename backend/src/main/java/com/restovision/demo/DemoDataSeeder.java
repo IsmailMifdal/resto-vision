@@ -84,6 +84,7 @@ public class DemoDataSeeder implements CommandLineRunner {
             rules.save(new AlertRule(demo, AlertType.UNSERVED, 30));
             rules.save(new AlertRule(demo, AlertType.TO_CLEAR, 20));
             rules.save(new AlertRule(demo, AlertType.QUEUE_LENGTH, 4));
+            rules.save(new AlertRule(demo, AlertType.EXIT_BLOCKED, 30));
             users.save(new AppUser("demo@restovision.local", passwordEncoder.encode("demo1234"), Role.MANAGER, demo));
             log.info("Données de démonstration créées : demo@restovision.local / demo1234");
         }

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from .analyzers import Analyzer
+from .analyzers.exit import ExitAnalyzer
 from .analyzers.plate_waste import PlateWasteAnalyzer
 from .analyzers.queue import QueueAnalyzer
 from .analyzers.tables import TableAnalyzer
@@ -20,6 +21,9 @@ def build_analyzers(config: EdgeConfig) -> list[Analyzer]:
         elif zone.type == "QUEUE":
             analyzers.append(QueueAnalyzer(config.restaurant_id, zone, config.groups,
                                            config.seconds_per_customer, config.stable_seconds))
+        elif zone.type == "EXIT":
+            analyzers.append(ExitAnalyzer(config.restaurant_id, zone, config.groups.get("obstacle", set()),
+                                          max(10.0, config.stable_seconds * 2)))
         else:
             raise ValueError(f"Type de zone inconnu : {zone.type}")
     # V3 : ajouter ici HygieneAnalyzer.

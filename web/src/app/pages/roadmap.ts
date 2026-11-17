@@ -40,6 +40,6 @@ export class RoadmapPage {
     { version: 'V2', title: 'Anti-gaspillage par plat', what: 'Reconnaître chaque assiette et son niveau de remplissage, avec un modèle entraîné sur les images du pilote.' },
     { version: 'V2', title: 'Prévision avec météo et réservations', what: 'La prévision du lendemain, déjà visible dans Service, affinée par la météo et les réservations.' },
     { version: 'V2', title: 'Commande ajustée à l’affluence', what: 'Le bon de commande tiendra compte de l’affluence prévue, une fois reliées les ventes de la caisse et la fréquentation vue par les caméras.' },
-    { version: 'V3', title: 'Hygiène et sécurité', what: 'Sol mouillé, sortie de secours bloquée. Après validation juridique.' },
+    { version: 'V3', title: 'Sol mouillé et hygiène', what: 'Demande un modèle entraîné et une validation juridique : il s’agit de filmer le travail des salariés.' },
   ];
 }

@@ -1,6 +1,6 @@
 export type TableState = 'EMPTY' | 'WAITING' | 'SERVED' | 'TO_CLEAR';
-export type ZoneType = 'TABLE' | 'QUEUE';
-export type AlertType = 'UNSERVED' | 'TO_CLEAR' | 'QUEUE_LENGTH';
+export type ZoneType = 'TABLE' | 'QUEUE' | 'EXIT';
+export type AlertType = 'UNSERVED' | 'TO_CLEAR' | 'QUEUE_LENGTH' | 'EXIT_BLOCKED';
 
 export interface Zone {
   code: string;
@@ -12,6 +12,9 @@ export interface Zone {
   estimatedWaitSeconds: number | null;
   /** Contour de la zone dans l'image de la caméra, ou null tant que le boîtier ne l'a pas envoyé. */
   polygon: [number, number][] | null;
+  /** Sortie de secours : encombrée ou non ; null pour les autres zones. */
+  blocked: boolean | null;
+  obstacles: number | null;
 }
 
 export interface Alert {
@@ -241,6 +244,7 @@ export const RULE_LABELS: Record<AlertType, { label: string; unit: string }> = {
   UNSERVED: { label: 'Clients non servis', unit: 'secondes' },
   TO_CLEAR: { label: 'Table à débarrasser', unit: 'secondes' },
   QUEUE_LENGTH: { label: 'File d’attente', unit: 'personnes' },
+  EXIT_BLOCKED: { label: 'Sortie de secours encombrée', unit: 'secondes' },
 };
 
 /** Remplace ou ajoute une zone, liste triée par code. */

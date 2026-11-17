@@ -49,7 +49,7 @@ function readZone(raw: unknown, index: number): EdgeZone {
   const polygon = Array.isArray(zone?.polygon) ? zone.polygon : [];
   const valid =
     typeof zone?.id === 'string' &&
-    (zone.type === 'TABLE' || zone.type === 'QUEUE') &&
+    (zone.type === 'TABLE' || zone.type === 'QUEUE' || zone.type === 'EXIT') &&
     polygon.length >= 3 &&
     polygon.every((p) => Array.isArray(p) && p.length === 2 && p.every((n) => typeof n === 'number'));
   if (!valid) throw new Error(`La zone n° ${index + 1} est incomplète (id, type ou polygone).`);
@@ -78,7 +78,7 @@ export function serializeEdgeConfig(config: EdgeConfig, zones: EdgeZone[]): stri
 
 /** Premier nom libre : T1, T2… pour une table, Q1, Q2… pour une file. */
 export function nextZoneId(zones: EdgeZone[], type: ZoneType): string {
-  const prefix = type === 'TABLE' ? 'T' : 'Q';
+  const prefix = type === 'TABLE' ? 'T' : type === 'QUEUE' ? 'Q' : 'S';
   const used = new Set(zones.map((zone) => zone.id.trim()));
   let n = 1;
   while (used.has(prefix + n)) n++;

@@ -51,6 +51,7 @@ import { SessionService } from '../core/session.service';
           <div class="tools">
             <button [class.primary]="tool() === 'TABLE'" (click)="startDraft('TABLE')">+ Table</button>
             <button [class.primary]="tool() === 'QUEUE'" (click)="startDraft('QUEUE')">+ File d’attente</button>
+            <button [class.primary]="tool() === 'EXIT'" (click)="startDraft('EXIT')">+ Sortie de secours</button>
             @if (tool()) {
               <button (click)="finishDraft()" [disabled]="draft().length < 3">Terminer la zone</button>
               <button (click)="undoPoint()" [disabled]="!draft().length">Retirer le dernier point</button>
@@ -71,7 +72,7 @@ import { SessionService } from '../core/session.service';
               <svg #overlay [attr.viewBox]="'0 0 ' + s.width + ' ' + s.height" [class.drawing]="tool()"
                    (click)="stageClick($event)" (pointermove)="drag($event)" (pointerup)="endDrag()" (pointerleave)="endDrag()">
                 @for (zone of zones(); track zi; let zi = $index) {
-                  <polygon [attr.points]="points(zone.polygon)" [class]="zone.type === 'TABLE' ? 'table' : 'queue'"
+                  <polygon [attr.points]="points(zone.polygon)" [class]="zone.type === 'TABLE' ? 'table' : zone.type === 'EXIT' ? 'exit' : 'queue'"
                            [class.selected]="zi === selected()" (click)="select(zi, $event)" />
                   <text [attr.x]="zone.polygon[0][0] + unit()" [attr.y]="zone.polygon[0][1] + unit() * 3.4"
                         [attr.font-size]="unit() * 3">{{ zone.id }}</text>
@@ -103,6 +104,7 @@ import { SessionService } from '../core/session.service';
                 <select [value]="zone.type" (change)="patch(zi, { type: type($event) })" aria-label="Type de zone">
                   <option value="TABLE">Table</option>
                   <option value="QUEUE">File</option>
+                  <option value="EXIT">Sortie</option>
                 </select>
                 <button (click)="remove(zi, $event)" [attr.aria-label]="'Supprimer ' + zone.id">Supprimer</button>
               </div>
@@ -153,6 +155,7 @@ import { SessionService } from '../core/session.service';
     svg.drawing { cursor: crosshair; }
     polygon { stroke-width: 2; vector-effect: non-scaling-stroke; cursor: pointer; }
     polygon.table { fill: rgba(134, 217, 160, 0.22); stroke: var(--free); }
+    polygon.exit { fill: rgba(236, 91, 96, 0.16); stroke: var(--alert); stroke-dasharray: 2 4; }
     polygon.queue { fill: rgba(255, 255, 255, 0.14); stroke: #ffffff; stroke-dasharray: 6 4; }
     polygon.selected { stroke-width: 4; fill-opacity: 0.6; }
     svg.drawing polygon { pointer-events: none; }

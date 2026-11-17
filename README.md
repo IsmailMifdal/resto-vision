@@ -56,6 +56,16 @@ Sans Docker, le backend tourne aussi sur une base en mémoire :
 `cd backend && mvn spring-boot:run -Dspring-boot.run.profiles=local` (il faut alors un broker MQTT local,
 ou `MQTT_ENABLED=false`).
 
+## Sortie de secours encombrée
+
+Une zone de type `EXIT` (dessinée avec « + Sortie de secours » dans la page Zones) est surveillée : si un objet
+(chaise, valise, sac, banc, plante, vélo, table — `labels.obstacle` dans `edge.json`) y est vu au moins 80 % du
+temps sur une dizaine de secondes, la sortie passe « encombrée ». Au-delà du seuil réglé dans Réglages (60 s par
+défaut), l'équipe reçoit une alerte, comme pour une table. Une personne qui passe n'est jamais comptée.
+
+Avant de vendre la fonction : la faire valider par un juriste et la mentionner dans l'affichage du restaurant.
+Le sol mouillé n'est pas détecté : le modèle de base ne connaît pas cette situation.
+
 ## Comparaison multi-sites
 
 Les restaurants qui partagent un `groupCode` forment un groupe. Le responsable de groupe (rôle `ADMIN`) voit

@@ -8,6 +8,7 @@ const ALERT_LABELS: Record<Alert['type'], string> = {
   UNSERVED: 'Non servis',
   TO_CLEAR: 'À débarrasser',
   QUEUE_LENGTH: 'File trop longue',
+  EXIT_BLOCKED: 'Sortie encombrée',
 };
 
 interface Placed {
@@ -61,7 +62,8 @@ interface Placed {
             <svg [attr.viewBox]="p.viewBox" preserveAspectRatio="none" aria-hidden="true">
               @for (item of p.items; track item.zone.code) {
                 <polygon [attr.points]="item.points" [attr.data-type]="item.zone.type"
-                         [attr.data-state]="item.zone.state" [class.alert]="item.alert" />
+                         [attr.data-state]="item.zone.state" [class.alert]="item.alert && item.zone.type !== 'EXIT'"
+                         [class.blocked-exit]="item.zone.blocked" />
               }
             </svg>
             @for (item of p.items; track item.zone.code) {
@@ -71,6 +73,8 @@ interface Placed {
                   <strong>{{ item.zone.code }}</strong>
                   <span class="state">{{ item.alert ? alertWord(item.zone) : label(item.zone) }}</span>
                   <span class="num meta">{{ elapsed(item.zone) }}@if (item.zone.persons) { · {{ item.zone.persons }} pers.}</span>
+                } @else if (item.zone.type === 'EXIT') {
+                  <span class="state exit" [class.blocked]="item.zone.blocked">Sortie {{ item.zone.blocked ? 'encombrée · ' + elapsed(item.zone) : 'dégagée' }}</span>
                 } @else {
                   <strong>File</strong>
                   <span class="num people">{{ item.zone.persons }}</span>
@@ -155,6 +159,10 @@ interface Placed {
     polygon[data-state='SERVED'] { fill: var(--served-bg); stroke: var(--served-bg); }
     polygon[data-state='TO_CLEAR'] { fill: var(--clear-bg); stroke: var(--clear); }
     polygon[data-type='QUEUE'] { fill: transparent; stroke: var(--control); stroke-dasharray: 5 5; }
+    polygon[data-type='EXIT'] { fill: transparent; stroke: var(--free); stroke-dasharray: 2 4; }
+    polygon[data-type='EXIT'].blocked-exit { fill: var(--alert-bg); stroke: var(--alert); stroke-dasharray: none; stroke-width: 2.5; }
+    .state.exit { color: var(--free); }
+    .state.exit.blocked { color: var(--alert); font-weight: 600; }
     polygon.alert { fill: var(--alert-bg); stroke: var(--alert); stroke-width: 2.5; }
 
     .tag { position: absolute; transform: translate(-50%, -50%); display: grid; justify-items: center; text-align: center; line-height: 17px; white-space: nowrap; pointer-events: none; }
@@ -306,6 +314,7 @@ export class FloorPage {
   alertDetail(alert: Alert): string {
     const zone = this.live.zones().find((z) => z.code === alert.zoneCode);
     if (alert.type === 'QUEUE_LENGTH') return zone ? `${zone.persons} personnes au comptoir` : '';
+    if (alert.type === 'EXIT_BLOCKED') return zone?.obstacles ? `${zone.obstacles} objet${zone.obstacles > 1 ? 's' : ''} devant la sortie` : '';
     const start = zone?.stateSince ?? alert.createdAt;
     return `depuis ${formatDuration((this.live.now() - Date.parse(start)) / 1000)}`;
   }

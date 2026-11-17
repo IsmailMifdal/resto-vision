@@ -285,3 +285,38 @@ def test_simulator_sends_plate_returns_with_leftovers():
                for e in pipeline.process(detections, 1000.0 + elapsed) if e.type == "PLATE_RETURN"]
     assert returns and all(e.data["servedFood"] == 2 for e in returns)
     assert {e.data["leftFood"] for e in returns} == {0, 1}
+
+
+def test_exit_is_blocked_by_objects_but_never_by_people():
+    from restovision_edge.analyzers.exit import ExitAnalyzer
+
+    exit_zone = Zone("S1", "EXIT", SQUARE)
+    analyzer = ExitAnalyzer("demo", exit_zone, {"chair", "suitcase"}, window_seconds=10)
+    chair = Detection("chair", 40, 40, 60, 60)
+    events = []
+    timeline = ([(t, [person()]) for t in range(0, 30)]                      # des gens passent : rien
+                + [(t, [chair] if t % 10 else []) for t in range(30, 60)]     # une chaise posée, ratée 1 image sur 10
+                + [(t, [person()]) for t in range(60, 80)])                   # la chaise est enlevée
+    for now, detections in timeline:
+        events += analyzer.process(detections, now)
+    assert [(e.data["blocked"], e.data["obstacles"]) for e in events] == [(True, 1), (False, 0)]
+    assert events[0].type == "EXIT" and events[0].zone_id == "S1"
+
+
+def test_an_object_carried_past_the_exit_does_not_block_it():
+    from restovision_edge.analyzers.exit import ExitAnalyzer
+
+    analyzer = ExitAnalyzer("demo", Zone("S1", "EXIT", SQUARE), {"suitcase"}, window_seconds=10)
+    case = Detection("suitcase", 40, 40, 60, 60)
+    events = []
+    for now in range(0, 40):
+        events += analyzer.process([case] if 15 <= now < 20 else [], now)   # 5 s de passage
+    assert events == []
+
+
+def test_simulator_blocks_the_exit_now_and_then():
+    config = load_config("config/edge.example.json")
+    pipeline = Pipeline(config)
+    exits = [e.data["blocked"] for detections, elapsed in scenario(config, cycles=3)
+             for e in pipeline.process(detections, 1000.0 + elapsed) if e.type == "EXIT"]
+    assert exits == [True, False]

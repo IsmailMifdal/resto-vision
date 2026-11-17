@@ -1,3 +1,4 @@
 package com.restovision.domain;
 
-public enum ZoneType { TABLE, QUEUE }
+/** TABLE : une table. QUEUE : la file au comptoir. EXIT : une sortie de secours à garder dégagée. */
+public enum ZoneType { TABLE, QUEUE, EXIT }

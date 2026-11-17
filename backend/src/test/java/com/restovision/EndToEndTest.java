@@ -117,6 +117,21 @@ class EndToEndTest {
     }
 
     @Test
+    void aBlockedExitRaisesAnAlertAfterItsThresholdAndClosesWhenCleared() {
+        edge.handle(EdgeEvent.exit("demo", "S9", Instant.now().minusSeconds(10), true, 1));
+        assertThat(queries.zones("demo")).anyMatch(z -> z.code().equals("S9") && Boolean.TRUE.equals(z.blocked()));
+        assertThat(queries.openAlerts("demo")).noneMatch(a -> a.zoneCode().equals("S9"));   // 10 s : sous le seuil de 30 s
+
+        edge.handle(EdgeEvent.exit("demo", "S8", Instant.now().minusSeconds(120), true, 2));
+        assertThat(queries.openAlerts("demo"))
+                .anyMatch(a -> a.zoneCode().equals("S8") && a.type() == AlertType.EXIT_BLOCKED
+                        && a.message().startsWith("Sortie de secours S8 encombrée"));
+        edge.handle(EdgeEvent.exit("demo", "S8", Instant.now(), false, 0));
+        assertThat(queries.openAlerts("demo")).noneMatch(a -> a.zoneCode().equals("S8"));
+        assertThat(queries.statsToday("demo").queuePersons()).isGreaterThanOrEqualTo(0);
+    }
+
+    @Test
     void unknownRestaurantIsIgnored() {
         edge.handle(table("T1", "WAITING", "EMPTY", Instant.now(), 2, 0).withRestaurant("inconnu"));
         assertThatThrownBy(() -> queries.zones("inconnu")).isInstanceOf(ResponseStatusException.class);

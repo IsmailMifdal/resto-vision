@@ -16,6 +16,11 @@ const RULES: Record<AlertType, { title: string; unit: string; sentence: (thresho
     unit: 'secondes',
     sentence: (t) => `L’équipe est prévenue quand une table reste ${t} avec de la vaisselle après le départ des clients.`,
   },
+  EXIT_BLOCKED: {
+    title: 'Sortie de secours encombrée',
+    unit: 'secondes',
+    sentence: (t) => `L’équipe est prévenue quand un objet encombre une sortie de secours depuis ${t}.`,
+  },
   QUEUE_LENGTH: {
     title: 'File d’attente',
     unit: 'personnes',

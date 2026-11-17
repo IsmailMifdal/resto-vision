@@ -66,6 +66,7 @@ public class EdgeEventService {
         ZoneType type = switch (event.type()) {
             case "TABLE_STATE" -> ZoneType.TABLE;
             case "QUEUE" -> ZoneType.QUEUE;
+            case "EXIT" -> ZoneType.EXIT;
             default -> null;
         };
         if (type == null) {
@@ -97,13 +98,21 @@ public class EdgeEventService {
             zone.setState(state);
             zone.setStateSince(at);
             zone.setDishes(event.dishes() == null ? 0 : event.dishes());
+        } else if (type == ZoneType.EXIT) {
+            boolean blocked = Boolean.TRUE.equals(event.blocked());
+            if (blocked != zone.isBlocked() || zone.getStateSince() == null) {
+                zone.setStateSince(at);   // depuis quand la sortie est encombrée (ou dégagée)
+            }
+            zone.setExit(blocked, event.obstacles() == null ? 0 : event.obstacles());
         } else {
             zone.setEstimatedWaitSeconds(event.estimatedWaitSeconds());
         }
         zone.setPersons(event.persons() == null ? 0 : event.persons());
         zone.setUpdatedAt(now);
 
-        events.save(new ZoneEvent(zone, zone.getState(), previous, zone.getPersons(), zone.getDishes(), at));
+        if (type != ZoneType.EXIT) {
+            events.save(new ZoneEvent(zone, zone.getState(), previous, zone.getPersons(), zone.getDishes(), at));
+        }
         notifier.zone(restaurant.getCode(), ZoneDto.of(zone));
         alertService.evaluateZone(zone, now);
     }
@@ -132,7 +141,8 @@ public class EdgeEventService {
         }
         for (EdgeEvent.ZoneLayout layout : event.zones()) {
             ZoneType type = "TABLE".equals(layout.type()) ? ZoneType.TABLE
-                    : "QUEUE".equals(layout.type()) ? ZoneType.QUEUE : null;
+                    : "QUEUE".equals(layout.type()) ? ZoneType.QUEUE
+                    : "EXIT".equals(layout.type()) ? ZoneType.EXIT : null;
             List<List<Double>> polygon = layout.polygon();
             boolean valid = layout.id() != null && type != null && polygon != null
                     && polygon.size() >= 3 && polygon.size() <= 100

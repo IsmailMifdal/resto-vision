@@ -5,12 +5,14 @@
   "labels": {
     "person": ["person"],
     "dish": ["cup", "bowl", "wine glass", "bottle", "fork", "knife", "spoon", "pizza", "sandwich", "cake"],
-    "food": ["banana", "apple", "sandwich", "orange", "broccoli", "carrot", "hot dog", "pizza", "donut", "cake"]
+    "food": ["banana", "apple", "sandwich", "orange", "broccoli", "carrot", "hot dog", "pizza", "donut", "cake"],
+    "obstacle": ["chair", "suitcase", "backpack", "handbag", "bench", "potted plant", "bicycle", "dining table"]
   },
   "stableSeconds": 5,
   "queue": { "secondsPerCustomer": 90 },
   "zones": [
     { "id": "Q1", "type": "QUEUE", "polygon": [[60, 90], [250, 90], [250, 630], [60, 630]] },
+    { "id": "S1", "type": "EXIT", "polygon": [[60, 660], [250, 660], [250, 710], [60, 710]] },
     { "id": "T1", "type": "TABLE", "baselineDishes": 0, "polygon": [[330, 90], [480, 90], [480, 280], [330, 280]] },
     { "id": "T2", "type": "TABLE", "baselineDishes": 0, "polygon": [[520, 90], [670, 90], [670, 280], [520, 280]] },
     { "id": "T3", "type": "TABLE", "baselineDishes": 0, "polygon": [[710, 90], [930, 90], [930, 280], [710, 280]] },
