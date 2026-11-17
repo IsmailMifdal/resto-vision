@@ -110,6 +110,15 @@ sous leur seuil sont proposés. Les lignes sont regroupées par fournisseur et s
 La proposition ne tient pas encore compte de l'affluence prévue : les ventes viennent de la caisse et
 l'affluence des caméras, et il faut de vraies données pour relier les deux.
 
+### Envoi par e-mail
+
+- **Rapport du jour** : envoyé chaque matin à 8 h aux gérants pour la veille (`MAIL_REPORT_CRON`), et sur
+  demande depuis l'écran Service. Il faut un serveur d'envoi : `SPRING_MAIL_HOST`, `SPRING_MAIL_PORT`,
+  `SPRING_MAIL_USERNAME`, `SPRING_MAIL_PASSWORD`, et l'expéditeur `MAIL_FROM`. Sans serveur, rien ne part.
+  Dans Docker, les e-mails vont dans Mailpit, une boîte de test locale : http://localhost:8025.
+- **Bon de commande** : « Préparer l'e-mail » ouvre la messagerie du gérant avec la commande rédigée.
+  Rien ne part sans lui.
+
 ## Prévision d'affluence
 
 L'écran « Service » affiche l'affluence attendue le lendemain, heure par heure. C'est la moyenne des 28 derniers

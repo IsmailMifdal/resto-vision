@@ -86,6 +86,14 @@ export class ApiService {
   report(date: string): Observable<Report> {
     return this.http.get<Report>(`${API_URL}/reports/daily`, { params: { date } });
   }
+  /** Vrai si le serveur sait envoyer des e-mails. */
+  mailAvailable(): Observable<{ available: boolean }> {
+    return this.http.get<{ available: boolean }>(`${API_URL}/mail`);
+  }
+  /** Envoie le rapport d'un jour terminé aux gérants. */
+  sendReport(date: string): Observable<{ sentTo: string[] }> {
+    return this.http.post<{ sentTo: string[] }>(`${API_URL}/reports/daily/send`, null, { params: { date } });
+  }
   /** Fait rédiger à nouveau le rapport d'un jour terminé. */
   rewriteReport(date: string): Observable<Report> {
     return this.http.post<Report>(`${API_URL}/reports/daily`, null, { params: { date } });

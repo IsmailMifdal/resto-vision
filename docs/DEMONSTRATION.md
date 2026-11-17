@@ -12,6 +12,8 @@ Déroulé d'une démonstration de 10 minutes devant un gérant, avec la salle si
 
 2. Ouvrir http://localhost:8088 et se connecter : `demo@restovision.local` / `demo1234`.
 3. Vérifier le bandeau du haut : il doit afficher « En direct » et le nombre de tables occupées.
+4. Ouvrir http://localhost:8025 dans un autre onglet : c'est la boîte de test où arrivent les e-mails
+   envoyés pendant la démonstration (rapport du jour). Rien ne part vraiment.
 
 À savoir : la salle simulée fait vivre chaque table en 4 minutes au lieu d'une heure, et les alertes de
 démonstration se déclenchent au bout de 20 à 30 secondes. C'est voulu, pour voir des alertes pendant le rendez-vous.

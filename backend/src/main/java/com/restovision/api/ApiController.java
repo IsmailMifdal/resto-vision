@@ -1,5 +1,7 @@
 package com.restovision.api;
 
+import com.restovision.report.ReportMailer;
+import java.util.Map;
 import com.restovision.api.Dtos.LocationUpdate;
 import com.restovision.api.Dtos.RestaurantDto;
 import com.restovision.api.Dtos.WasteDayDto;
@@ -42,8 +44,11 @@ public class ApiController {
     private final RestaurantQueryService queries;
     private final BoxService boxes;
     private final WasteService waste;
+    private final ReportMailer mailer;
 
-    public ApiController(AuthService auth, RestaurantQueryService queries, BoxService boxes, WasteService waste) {
+    public ApiController(AuthService auth, RestaurantQueryService queries, BoxService boxes, WasteService waste,
+                         ReportMailer mailer) {
+        this.mailer = mailer;
         this.boxes = boxes;
         this.waste = waste;
         this.auth = auth;
@@ -141,6 +146,19 @@ public class ApiController {
     @GetMapping("/boxes")
     public List<BoxDto> boxes(@AuthenticationPrincipal Jwt jwt) {
         return boxes.list(restaurantOf(jwt));
+    }
+
+    /** Les envois possibles depuis l'application. */
+    @GetMapping("/mail")
+    public Map<String, Boolean> mail() {
+        return Map.of("available", mailer.isConfigured());
+    }
+
+    /** Envoie par e-mail le rapport d'un jour terminé aux gérants. Réservé au gérant. */
+    @PostMapping("/reports/daily/send")
+    public Map<String, List<String>> sendDailyReport(@AuthenticationPrincipal Jwt jwt,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        return Map.of("sentTo", mailer.send(restaurantOf(jwt), date));
     }
 
     @GetMapping("/stats/today")

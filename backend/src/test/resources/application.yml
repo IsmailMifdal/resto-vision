@@ -21,6 +21,8 @@ restovision:
     allowed-origins: http://localhost:4200
   boxes:
     check-interval-ms: 3600000
+  mail:
+    report-cron: "-"
   alerts:
     check-interval-ms: 3600000
   demo:

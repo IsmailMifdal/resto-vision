@@ -105,7 +105,10 @@ const amount = (value: number) => value.toLocaleString('fr-FR', { maximumFractio
                   }
                 </ul>
               }
-              <button (click)="copyOrder()">{{ copied() ? 'Copié' : 'Copier le bon de commande' }}</button>
+              <div class="order-actions">
+                <a class="button" [href]="orderMailto()">Préparer l’e-mail</a>
+                <button (click)="copyOrder()">{{ copied() ? 'Copié' : 'Copier le bon de commande' }}</button>
+              </div>
             } @else {
               <p class="empty">Rien à commander pour tenir {{ o.coverDays }} jours.</p>
             }
@@ -215,7 +218,7 @@ const amount = (value: number) => value.toLocaleString('fr-FR', { maximumFractio
     .order li { display: grid; grid-template-columns: minmax(0, 1fr) auto 96px; align-items: center; gap: 12px; min-height: 36px; border-top: 1px solid var(--rule); }
     .order li:first-child { border-top: 0; }
     .order strong { font-weight: 600; text-align: right; }
-    .order + button { margin-top: 14px; }
+    .order-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
     .add input { height: 36px; }
     .pick { display: inline-flex; align-items: center; height: var(--control-height); padding: 0 16px; margin-top: 14px; border-radius: var(--radius-control); cursor: pointer; background: var(--text); color: #000; font-weight: 500; }
     .pick.busy { opacity: 0.6; cursor: default; }
@@ -309,6 +312,12 @@ export class StockPage implements OnInit {
       (group) => `${group.supplier}\n` + group.lines.map((line) => `- ${line.ingredient} : ${amount(line.toOrder)} ${line.unit}`).join('\n'),
     );
     return `Commande ${this.restaurantName} du ${today}\n\n${blocks.join('\n\n')}\n`;
+  }
+
+  /** Ouvre la messagerie du gérant avec la commande déjà rédigée. Rien ne part sans lui. */
+  orderMailto(): string {
+    const subject = `Commande ${this.restaurantName} du ${new Date().toLocaleDateString('fr-FR')}`;
+    return `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(this.orderText())}`;
   }
 
   async copyOrder(): Promise<void> {

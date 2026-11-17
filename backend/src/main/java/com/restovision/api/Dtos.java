@@ -68,6 +68,9 @@ public final class Dtos {
     public record ReportDto(LocalDate date, String text, DailyReport.Source source, Instant generatedAt,
                             boolean partial, boolean aiAvailable) {}
 
+    /** Le rapport et ce qu'on peut en faire depuis l'écran. */
+    public record ReportViewDto(ReportDto report, boolean mailAvailable) {}
+
     public record ForecastHourDto(int hour, double expectedSeatings, double expectedOccupancyRate) {}
 
     /** Affluence attendue un jour à venir. `basedOnDays` : jours d'historique utilisés, dont `sameWeekdayDays` du même jour de la semaine. */

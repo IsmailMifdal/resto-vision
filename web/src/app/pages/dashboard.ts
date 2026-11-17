@@ -66,7 +66,13 @@ const MINUTE_STEPS = [60, 120, 300, 600, 900, 1800];
           </div>
           <p>{{ r.text }}</p>
           @if (canRewrite && !r.partial) {
-            <button (click)="rewrite()" [disabled]="rewriting()">{{ rewriting() ? 'Rédaction…' : 'Rédiger à nouveau' }}</button>
+            <div class="actions">
+              <button (click)="rewrite()" [disabled]="rewriting()">{{ rewriting() ? 'Rédaction…' : 'Rédiger à nouveau' }}</button>
+              @if (mailAvailable()) {
+                <button (click)="sendReport()" [disabled]="sending()">{{ sending() ? 'Envoi…' : 'Envoyer par e-mail' }}</button>
+              }
+              @if (sent()) { <span class="muted small" role="status">{{ sent() }}</span> }
+            </div>
           }
         </section>
       }
@@ -175,7 +181,7 @@ const MINUTE_STEPS = [60, 120, 300, 600, 900, 1800];
     .forecast > p:not(.empty) { margin-bottom: 20px; max-width: 86ch; }
     .report { margin-bottom: var(--gap); }
     .report p { max-width: 86ch; font-size: 16px; line-height: 26px; }
-    .report button { margin-top: 16px; }
+    .report .actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
 
     .legend { display: flex; flex-wrap: wrap; gap: 6px 18px; list-style: none; margin: 0; padding: 0; color: var(--muted); font-size: 12px; }
     .legend li { display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; }
@@ -212,6 +218,9 @@ export class DashboardPage implements OnInit, OnDestroy {
   readonly waste = signal<WasteDay | null>(null);
   readonly forecast = signal<Forecast | null>(null);
   readonly rewriting = signal(false);
+  readonly mailAvailable = signal(false);
+  readonly sending = signal(false);
+  readonly sent = signal<string | null>(null);
   readonly canRewrite = inject(SessionService).session()?.role !== 'STAFF';
   readonly error = signal<string | null>(null);
 
@@ -273,6 +282,7 @@ export class DashboardPage implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.loadWeek(true);
+    this.api.mailAvailable().subscribe({ next: (mail) => this.mailAvailable.set(mail.available), error: () => undefined });
     this.api.forecast().subscribe({ next: (forecast) => this.forecast.set(forecast), error: () => undefined });
     // La journée en cours avance : on la relit toutes les 30 secondes.
     this.timer = setInterval(() => {
@@ -286,6 +296,7 @@ export class DashboardPage implements OnInit, OnDestroy {
 
   select(date: string): void {
     this.selected.set(date);
+    this.sent.set(null);
     this.loadDay(date);
   }
 
@@ -317,6 +328,23 @@ export class DashboardPage implements OnInit, OnDestroy {
     if (report.partial) return 'Journée en cours, mis à jour à chaque lecture';
     if (report.source === 'AI') return 'Rédigé par IA à partir des chiffres ci-dessous';
     return report.aiAvailable ? 'Rédigé sans IA' : 'Rédigé sans IA : aucune clé d’API configurée';
+  }
+
+  sendReport(): void {
+    const date = this.selected();
+    if (!date) return;
+    this.sending.set(true);
+    this.sent.set(null);
+    this.api.sendReport(date).subscribe({
+      next: (result) => {
+        this.sending.set(false);
+        this.sent.set(result.sentTo.length ? `Envoyé à ${result.sentTo.join(', ')}` : 'Aucun gérant à qui l’envoyer.');
+      },
+      error: (e) => {
+        this.sending.set(false);
+        this.error.set(e.error?.message || 'Le rapport n’a pas pu être envoyé.');
+      },
+    });
   }
 
   rewrite(): void {
