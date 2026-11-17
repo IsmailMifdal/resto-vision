@@ -160,6 +160,19 @@ export interface Report {
   aiAvailable: boolean;
 }
 
+/** Ce qui est revenu en cuisine un jour donné. */
+export interface WasteDay {
+  date: string;
+  from: string;
+  /** Repas observés : tables quittées après avoir été servies. */
+  meals: number;
+  withLeftovers: number;
+  /** Part des repas qui ont laissé de la nourriture, en %, null sans repas observé. */
+  leftoverShare: number | null;
+  previousWeekShare: number | null;
+  leftovers: { table: string; at: string; servedFood: number; leftFood: number }[];
+}
+
 /** Un boîtier d'analyse et son dernier signal de vie. */
 export interface Box {
   boxId: string;

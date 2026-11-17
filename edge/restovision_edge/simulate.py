@@ -25,6 +25,8 @@ def scenario(config: EdgeConfig, cycle_seconds: float = 240.0, step: float = 1.0
     queues = [z for z in config.zones if z.type == "QUEUE"]
     person = sorted(config.groups["person"])[0]
     dish = sorted(config.groups.get("dish", {"cup"}))[0]
+    food = sorted(config.groups.get("food", set()))
+    meal = "pizza" if "pizza" in food else (food[0] if food else None)
     t = 0.0
     while cycles == 0 or t < cycle_seconds * cycles:
         detections: list[Detection] = []
@@ -35,6 +37,12 @@ def scenario(config: EdgeConfig, cycle_seconds: float = 240.0, step: float = 1.0
                 detections += [_box(person, cx - 30, cy), _box(person, cx + 30, cy)]
             if 0.40 <= phase < 0.90:  # vaisselle sur la table
                 detections.append(_box(dish, cx, cy + 30, 8))
+            if meal and 0.40 <= phase < 0.90:
+                # Deux plats servis ; une fois sur trois, un plat revient à moitié plein.
+                cycle = int((t + i * cycle_seconds / max(1, len(tables))) // cycle_seconds)
+                left = 1 if (cycle + i) % 3 == 0 else 0
+                served = 2 if phase < 0.70 else left
+                detections += [_box(meal, cx - 20 + 40 * k, cy - 30, 10) for k in range(served)]
         for zone in queues:
             cx, cy = _center(zone)
             count = int(4 * abs(((t / cycle_seconds) * 2) % 2 - 1) + 0.5)

@@ -83,6 +83,16 @@ public final class Dtos {
         }
     }
 
+    /** Une table quittée avec de la nourriture encore visible. */
+    public record PlateReturnDto(String table, Instant at, int servedFood, int leftFood) {}
+
+    /**
+     * Retours en cuisine d'une journée. `meals` : repas observés (tables quittées après service) ;
+     * `leftoverShare` : part de ces repas qui ont laissé de la nourriture, en pour cent, null sans repas observé.
+     */
+    public record WasteDayDto(LocalDate date, Instant from, int meals, int withLeftovers, Integer leftoverShare,
+                              Integer previousWeekShare, List<PlateReturnDto> leftovers) {}
+
     public record LoginRequest(@NotBlank @Email String email, @NotBlank String password) {}
 
     public record LoginResponse(String token, String restaurantCode, String restaurantName, String role) {}

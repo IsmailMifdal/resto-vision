@@ -4,7 +4,8 @@
   "model": { "weights": "yolo11n.pt", "confidence": 0.35, "fps": 5, "imgsz": 1280 },
   "labels": {
     "person": ["person"],
-    "dish": ["cup", "bowl", "wine glass", "bottle", "fork", "knife", "spoon", "pizza", "sandwich", "cake"]
+    "dish": ["cup", "bowl", "wine glass", "bottle", "fork", "knife", "spoon", "pizza", "sandwich", "cake"],
+    "food": ["banana", "apple", "sandwich", "orange", "broccoli", "carrot", "hot dog", "pizza", "donut", "cake"]
   },
   "stableSeconds": 5,
   "queue": { "secondsPerCustomer": 90 },

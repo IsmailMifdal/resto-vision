@@ -1,5 +1,7 @@
 package com.restovision.edge;
 
+import com.restovision.waste.PlateReturn;
+import com.restovision.waste.PlateReturnRepository;
 import java.util.List;
 import com.restovision.alert.AlertService;
 import com.restovision.api.Dtos.ZoneDto;
@@ -29,15 +31,18 @@ public class EdgeEventService {
     private final AlertService alertService;
     private final LiveNotifier notifier;
     private final BoxService boxes;
+    private final PlateReturnRepository plateReturns;
 
     public EdgeEventService(RestaurantRepository restaurants, ZoneRepository zones, ZoneEventRepository events,
-                            AlertService alertService, LiveNotifier notifier, BoxService boxes) {
+                            AlertService alertService, LiveNotifier notifier, BoxService boxes,
+                            PlateReturnRepository plateReturns) {
         this.restaurants = restaurants;
         this.zones = zones;
         this.events = events;
         this.alertService = alertService;
         this.notifier = notifier;
         this.boxes = boxes;
+        this.plateReturns = plateReturns;
     }
 
     @Transactional
@@ -52,6 +57,10 @@ public class EdgeEventService {
         }
         if (event.type() == null || event.restaurantId() == null || event.zoneId() == null) {
             log.warn("Événement incomplet ignoré : {}", event);
+            return;
+        }
+        if ("PLATE_RETURN".equals(event.type())) {
+            handlePlateReturn(event);
             return;
         }
         ZoneType type = switch (event.type()) {
@@ -97,6 +106,20 @@ public class EdgeEventService {
         events.save(new ZoneEvent(zone, zone.getState(), previous, zone.getPersons(), zone.getDishes(), at));
         notifier.zone(restaurant.getCode(), ZoneDto.of(zone));
         alertService.evaluateZone(zone, now);
+    }
+
+    /** Une table vient d'être quittée : on garde ce qui restait sur la table. */
+    private void handlePlateReturn(EdgeEvent event) {
+        Restaurant restaurant = restaurants.findByCode(event.restaurantId()).orElse(null);
+        Zone zone = restaurant == null ? null : zones.findByRestaurantAndCode(restaurant, event.zoneId()).orElse(null);
+        if (zone == null || zone.getType() != ZoneType.TABLE || event.servedFood() == null || event.leftFood() == null
+                || event.servedFood() <= 0) {
+            log.warn("Retour d'assiettes ignoré : {} {}", event.restaurantId(), event.zoneId());
+            return;
+        }
+        Instant now = Instant.now();
+        Instant at = event.timestamp() == null || event.timestamp().isAfter(now) ? now : event.timestamp();
+        plateReturns.save(new PlateReturn(zone, at, event.servedFood(), event.leftFood()));
     }
 
     /** Le boîtier annonce le contour de ses zones : on le garde pour dessiner le plan de salle. */

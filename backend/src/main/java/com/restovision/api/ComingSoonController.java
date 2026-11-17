@@ -18,10 +18,6 @@ public class ComingSoonController {
     }
 
 
-    @GetMapping("/waste")
-    public ResponseEntity<Map<String, String>> waste() {
-        return planned("Anti-gaspillage", "V2");
-    }
 
 
 

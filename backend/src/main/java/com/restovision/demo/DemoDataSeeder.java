@@ -1,5 +1,7 @@
 package com.restovision.demo;
 
+import com.restovision.waste.PlateReturn;
+import com.restovision.waste.PlateReturnRepository;
 import com.restovision.domain.AlertRule;
 import com.restovision.domain.AlertType;
 import com.restovision.domain.AppUser;
@@ -53,11 +55,13 @@ public class DemoDataSeeder implements CommandLineRunner {
     private final ZoneRepository zones;
     private final ZoneEventRepository events;
     private final PasswordEncoder passwordEncoder;
+    private final PlateReturnRepository plateReturns;
     private final boolean history;
     private final ZoneId timezone;
 
     public DemoDataSeeder(RestaurantRepository restaurants, AlertRuleRepository rules, AppUserRepository users,
                           ZoneRepository zones, ZoneEventRepository events, PasswordEncoder passwordEncoder,
+                          PlateReturnRepository plateReturns,
                           @Value("${restovision.demo.history:false}") boolean history,
                           @Value("${restovision.timezone:Europe/Paris}") String timezone) {
         this.restaurants = restaurants;
@@ -66,6 +70,7 @@ public class DemoDataSeeder implements CommandLineRunner {
         this.zones = zones;
         this.events = events;
         this.passwordEncoder = passwordEncoder;
+        this.plateReturns = plateReturns;
         this.history = history;
         this.timezone = ZoneId.of(timezone);
     }
@@ -101,7 +106,21 @@ public class DemoDataSeeder implements CommandLineRunner {
             }
         }
         events.saveAll(created);
+        plateReturns.saveAll(plateReturns(created));
         log.info("Historique de démonstration créé : {} événements sur {} jours", created.size(), HISTORY_DAYS + 1);
+    }
+
+    /** À chaque départ de clients : deux à quatre plats servis, et environ un repas sur cinq qui laisse un plat. */
+    static List<PlateReturn> plateReturns(List<ZoneEvent> history) {
+        List<PlateReturn> out = new ArrayList<>();
+        for (ZoneEvent event : history) {
+            if (event.getState() == TableState.TO_CLEAR) {
+                Random random = new Random(event.getOccurredAt().toEpochMilli());
+                int served = Math.max(1, event.getDishes());
+                out.add(new PlateReturn(event.getZone(), event.getOccurredAt(), served, random.nextInt(5) == 0 ? 1 : 0));
+            }
+        }
+        return out;
     }
 
     /** Une journée fictive pour une table : déjeuner et dîner, toujours la même pour une date donnée. */

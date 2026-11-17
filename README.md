@@ -64,6 +64,16 @@ d'images analysées par seconde, sa version et les messages en attente si le ré
 l'application l'affiche en rouge et l'écran Salle prévient que l'état des tables n'est plus à jour. Le détail est
 dans Réglages. Le nom d'un boîtier se règle avec `boxId` dans `edge.json` (par défaut, le nom de la machine).
 
+## Retours en cuisine (anti-gaspillage)
+
+Pendant le repas, le boîtier note le plus grand nombre d'aliments vus sur la table ; quand les clients partent,
+il compte ceux qui restent et envoie un événement `PLATE_RETURN`. L'écran « Service » affiche la part des repas
+qui ont laissé de la nourriture, comparée aux 7 jours précédents, et les tables concernées.
+
+Limite : le modèle de base reconnaît des aliments (pizza, sandwich, gâteau, fruits, brocoli, carotte), pas les
+assiettes. Un plat qu'il ne sait pas nommer n'est pas compté. Un modèle entraîné sur les assiettes du restaurant
+pilote remplacera la liste `labels.food` de `edge.json`.
+
 ## Rapport du jour
 
 L'écran « Service » affiche un rapport en phrases pour chaque journée. Les chiffres sont calculés par le

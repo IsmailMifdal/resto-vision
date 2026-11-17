@@ -104,6 +104,18 @@ class EndToEndTest {
         assertThat(queries.dailyReport("demo", null, false).partial()).isTrue();
     }
 
+    @Autowired com.restovision.waste.WasteService waste;
+
+    @Test
+    void aPlateReturnFromTheBoxShowsInTheDayWaste() {
+        edge.handle(table("T3", "SERVED", "WAITING", Instant.now().minusSeconds(1200), 2, 2));
+        edge.handle(EdgeEvent.plateReturn("demo", "T3", Instant.now().minusSeconds(60), 2, 1));
+        edge.handle(EdgeEvent.plateReturn("demo", "T99", Instant.now(), 2, 1));   // table inconnue : ignorée
+        assertThat(waste.day("demo", null).leftovers())
+                .anyMatch(r -> r.table().equals("T3") && r.leftFood() == 1)
+                .noneMatch(r -> r.table().equals("T99"));
+    }
+
     @Test
     void unknownRestaurantIsIgnored() {
         edge.handle(table("T1", "WAITING", "EMPTY", Instant.now(), 2, 0).withRestaurant("inconnu"));

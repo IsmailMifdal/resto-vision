@@ -226,3 +226,62 @@ def test_source_is_described_without_its_address():
     assert describe_source("rtsp://admin:secret@192.168.1.20/flux") == "caméra"
     assert describe_source("simulate") == "simulateur"
     assert describe_source("samples/salle.mp4") == "vidéo"
+
+
+def test_plate_return_counts_food_left_when_clients_leave():
+    from restovision_edge.analyzers.plate_waste import PlateWasteAnalyzer
+
+    groups = {"person": {"person"}, "dish": {"cup"}}
+    table = TableAnalyzer("demo", ZONE, groups, stable_seconds=5)
+    waste = PlateWasteAnalyzer(table, {"pizza"})
+
+    def pizza(x):
+        return Detection("pizza", x - 3, 57, x + 3, 63)
+
+    timeline = ([(t, [person(), cup()]) for t in range(0, 20)]                        # attente
+                + [(t, [person(), cup(), pizza(30), pizza(70)]) for t in range(20, 50)]  # deux plats servis
+                + [(t, [person(), cup(), pizza(30)]) for t in range(50, 60)]           # un plat terminé
+                + [(t, [cup(), pizza(30)]) for t in range(60, 80)])                    # départ, un plat reste
+    events = []
+    for now, detections in timeline:
+        table.process(detections, now)
+        events += waste.process(detections, now)
+    (event,) = events
+    assert event.type == "PLATE_RETURN" and event.zone_id == "T1"
+    assert event.data == {"servedFood": 2, "leftFood": 1}
+
+
+def test_plates_cleared_with_the_clients_do_not_count_as_leftovers():
+    from restovision_edge.analyzers.plate_waste import PlateWasteAnalyzer
+
+    table = TableAnalyzer("demo", ZONE, {"person": {"person"}, "dish": {"cup"}}, stable_seconds=5)
+    waste = PlateWasteAnalyzer(table, {"pizza"})
+    plate = Detection("pizza", 47, 57, 53, 63)
+    events = []
+    for now, detections in ([(t, [person(), cup(), plate]) for t in range(0, 40)]
+                            + [(t, [cup()]) for t in range(40, 60)]):   # assiette finie, clients partis
+        table.process(detections, now)
+        events += waste.process(detections, now)
+    (event,) = events
+    assert event.data == {"servedFood": 1, "leftFood": 0}
+
+
+def test_no_plate_return_when_no_food_was_ever_seen():
+    from restovision_edge.analyzers.plate_waste import PlateWasteAnalyzer
+
+    table = TableAnalyzer("demo", ZONE, GROUPS, stable_seconds=5)
+    waste = PlateWasteAnalyzer(table, {"pizza"})
+    events = []
+    for now, detections in [(t, [person(), cup()]) for t in range(0, 40)] + [(t, [cup()]) for t in range(40, 60)]:
+        table.process(detections, now)
+        events += waste.process(detections, now)
+    assert events == []
+
+
+def test_simulator_sends_plate_returns_with_leftovers():
+    config = load_config("config/edge.example.json")
+    pipeline = Pipeline(config)
+    returns = [e for detections, elapsed in scenario(config, cycles=3)
+               for e in pipeline.process(detections, 1000.0 + elapsed) if e.type == "PLATE_RETURN"]
+    assert returns and all(e.data["servedFood"] == 2 for e in returns)
+    assert {e.data["leftFood"] for e in returns} == {0, 1}

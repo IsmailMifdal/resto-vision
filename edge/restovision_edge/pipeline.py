@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from .analyzers import Analyzer
+from .analyzers.plate_waste import PlateWasteAnalyzer
 from .analyzers.queue import QueueAnalyzer
 from .analyzers.tables import TableAnalyzer
 from .config import EdgeConfig
@@ -12,13 +13,16 @@ def build_analyzers(config: EdgeConfig) -> list[Analyzer]:
     analyzers: list[Analyzer] = []
     for zone in config.zones:
         if zone.type == "TABLE":
-            analyzers.append(TableAnalyzer(config.restaurant_id, zone, config.groups, config.stable_seconds))
+            table = TableAnalyzer(config.restaurant_id, zone, config.groups, config.stable_seconds)
+            analyzers.append(table)
+            if config.groups.get("food"):
+                analyzers.append(PlateWasteAnalyzer(table, config.groups["food"]))  # après sa table
         elif zone.type == "QUEUE":
             analyzers.append(QueueAnalyzer(config.restaurant_id, zone, config.groups,
                                            config.seconds_per_customer, config.stable_seconds))
         else:
             raise ValueError(f"Type de zone inconnu : {zone.type}")
-    # V2 / V3 : ajouter ici PlateWasteAnalyzer, HygieneAnalyzer.
+    # V3 : ajouter ici HygieneAnalyzer.
     return analyzers
 
 

@@ -2,7 +2,7 @@ import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular
 import { Bar, BarChart } from '../components/bar-chart';
 import { ServiceTimeline } from '../components/service-timeline';
 import { ApiService } from '../core/api.service';
-import { Day, DaySummary, Forecast, Report, clockTime, formatWait } from '../core/models';
+import { Day, DaySummary, Forecast, Report, WasteDay, clockTime, formatWait } from '../core/models';
 import { SessionService } from '../core/session.service';
 
 const minutes = (seconds: number) =>
@@ -67,6 +67,32 @@ const MINUTE_STEPS = [60, 120, 300, 600, 900, 1800];
           <p>{{ r.text }}</p>
           @if (canRewrite && !r.partial) {
             <button (click)="rewrite()" [disabled]="rewriting()">{{ rewriting() ? 'Rédaction…' : 'Rédiger à nouveau' }}</button>
+          }
+        </section>
+      }
+
+      @if (waste(); as w) {
+        <section class="card waste">
+          <div class="card-head">
+            <h2>Retours en cuisine</h2>
+            <span class="muted small">Aliments reconnus : pizza, sandwich, gâteau, fruits, légumes</span>
+          </div>
+          @if (w.meals) {
+            <div class="waste-row">
+              <div class="figure">
+                <strong class="num">{{ w.leftoverShare }} %</strong>
+                <span class="muted small num">des repas ont laissé de la nourriture ({{ w.withLeftovers }} sur {{ w.meals }})</span>
+                @if (w.previousWeekShare !== null) { <span class="faint small num">Moyenne des 7 jours précédents : {{ w.previousWeekShare }} %</span> }
+              </div>
+              <ul>
+                @for (item of w.leftovers.slice(0, 6); track $index) {
+                  <li class="num"><span>Table {{ item.table }}</span><span class="muted">{{ time(d, item.at) }}</span><span>{{ item.leftFood }} sur {{ item.servedFood }} plats</span></li>
+                }
+                @if (w.leftovers.length > 6) { <li class="muted small">et {{ w.leftovers.length - 6 }} autres</li> }
+              </ul>
+            </div>
+          } @else {
+            <p class="empty">Aucun repas observé ce jour-là : la mesure commence quand les clients quittent une table servie.</p>
           }
         </section>
       }
@@ -138,6 +164,13 @@ const MINUTE_STEPS = [60, 120, 300, 600, 900, 1800];
     .kpis .small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
     .forecast { margin-top: var(--gap); }
+    .waste { margin-bottom: var(--gap); }
+    .waste-row { display: grid; grid-template-columns: minmax(220px, 300px) minmax(0, 1fr); gap: 32px; align-items: start; }
+    .waste .figure { display: grid; gap: 2px; }
+    .waste .figure strong { font-size: 24px; line-height: 32px; font-weight: 600; }
+    .waste ul { list-style: none; margin: 0; padding: 0; columns: 2; column-gap: 32px; }
+    .waste li { display: grid; grid-template-columns: 70px 52px auto; gap: 10px; min-height: 30px; align-items: center; break-inside: avoid; }
+    @media (max-width: 760px) { .waste-row { grid-template-columns: 1fr; gap: 16px; } .waste ul { columns: 1; } }
     .forecast app-bar-chart { display: block; max-width: 680px; }
     .forecast > p:not(.empty) { margin-bottom: 20px; max-width: 86ch; }
     .report { margin-bottom: var(--gap); }
@@ -176,6 +209,7 @@ export class DashboardPage implements OnInit, OnDestroy {
   readonly selected = signal<string | null>(null);
   readonly day = signal<Day | null>(null);
   readonly report = signal<Report | null>(null);
+  readonly waste = signal<WasteDay | null>(null);
   readonly forecast = signal<Forecast | null>(null);
   readonly rewriting = signal(false);
   readonly canRewrite = inject(SessionService).session()?.role !== 'STAFF';
@@ -334,6 +368,12 @@ export class DashboardPage implements OnInit, OnDestroy {
   }
 
   private loadDay(date: string): void {
+    this.api.waste(date).subscribe({
+      next: (waste) => {
+        if (this.selected() === date) this.waste.set(waste);
+      },
+      error: () => this.waste.set(null),
+    });
     this.api.report(date).subscribe({
       next: (report) => {
         if (this.selected() === date) this.report.set(report);

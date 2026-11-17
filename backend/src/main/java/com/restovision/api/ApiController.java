@@ -1,5 +1,7 @@
 package com.restovision.api;
 
+import com.restovision.api.Dtos.WasteDayDto;
+import com.restovision.waste.WasteService;
 import com.restovision.api.Dtos.BoxDto;
 import com.restovision.edge.BoxService;
 import com.restovision.api.Dtos.ForecastDto;
@@ -37,9 +39,11 @@ public class ApiController {
     private final AuthService auth;
     private final RestaurantQueryService queries;
     private final BoxService boxes;
+    private final WasteService waste;
 
-    public ApiController(AuthService auth, RestaurantQueryService queries, BoxService boxes) {
+    public ApiController(AuthService auth, RestaurantQueryService queries, BoxService boxes, WasteService waste) {
         this.boxes = boxes;
+        this.waste = waste;
         this.auth = auth;
         this.queries = queries;
     }
@@ -111,6 +115,13 @@ public class ApiController {
     public ForecastDto forecast(@AuthenticationPrincipal Jwt jwt,
                                 @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
         return queries.forecast(restaurantOf(jwt), date);
+    }
+
+    /** Ce qui est revenu en cuisine un jour donné. Sans date : aujourd'hui. */
+    @GetMapping("/waste")
+    public WasteDayDto waste(@AuthenticationPrincipal Jwt jwt,
+                             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        return waste.day(restaurantOf(jwt), date);
     }
 
     /** Les boîtiers du restaurant et leur dernier signal de vie. */

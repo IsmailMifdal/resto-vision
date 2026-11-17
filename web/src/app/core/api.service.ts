@@ -3,7 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { API_URL } from './config';
 import {
-  Alert, AlertRule, Box, Day, DaySummary, Dish, Forecast, ImportResult, Ingredient, Order, Report, Session, Stats, Stock, Zone,
+  Alert, AlertRule, Box, Day, DaySummary, Dish, Forecast, ImportResult, Ingredient, Order, Report, Session, Stats, Stock, WasteDay, Zone,
 } from './models';
 
 @Injectable({ providedIn: 'root' })
@@ -73,6 +73,9 @@ export class ApiService {
   /** Affluence attendue demain. */
   forecast(): Observable<Forecast> {
     return this.http.get<Forecast>(`${API_URL}/forecast`);
+  }
+  waste(date: string): Observable<WasteDay> {
+    return this.http.get<WasteDay>(`${API_URL}/waste`, { params: { date } });
   }
   report(date: string): Observable<Report> {
     return this.http.get<Report>(`${API_URL}/reports/daily`, { params: { date } });
