@@ -29,6 +29,14 @@ export class App {
       queue: zones.filter((zone) => zone.type === 'QUEUE').reduce((sum, queue) => sum + queue.persons, 0),
     };
   });
+  /** Le boîtier silencieux le plus ancien : tant qu'il se tait, l'état des tables affiché n'est plus à jour. */
+  protected readonly silentBox = computed(() => {
+    const offline = (this.live.boxes() ?? []).filter((box) => !box.online);
+    if (!offline.length) return null;
+    const oldest = offline.reduce((a, b) => (a.lastSeen <= b.lastSeen ? a : b));
+    const minutes = Math.max(1, Math.floor((this.live.now() - Date.parse(oldest.lastSeen)) / 60000));
+    return minutes < 60 ? `${minutes} min` : `${Math.floor(minutes / 60)} h ${String(minutes % 60).padStart(2, '0')}`;
+  });
   protected readonly openAlerts = computed(() => this.live.alerts().filter((alert) => !alert.acknowledgedAt).length);
   protected readonly clock = computed(() =>
     new Date(this.live.now()).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),

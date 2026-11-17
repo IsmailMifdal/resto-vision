@@ -1,5 +1,6 @@
 package com.restovision.api;
 
+import com.restovision.edge.EdgeBox;
 import com.restovision.report.DailyReport;
 import java.time.LocalDate;
 import java.util.List;
@@ -72,6 +73,15 @@ public final class Dtos {
     /** Affluence attendue un jour à venir. `basedOnDays` : jours d'historique utilisés, dont `sameWeekdayDays` du même jour de la semaine. */
     public record ForecastDto(LocalDate date, int basedOnDays, int sameWeekdayDays, List<ForecastHourDto> hours,
                               Integer peakHour, int expectedSeatings) {}
+
+    /** État d'un boîtier. `fps` : images analysées par seconde sur la dernière demi-minute. */
+    public record BoxDto(String boxId, String source, String version, Double fps, int buffered, long uptimeSeconds,
+                         Instant lastSeen, boolean online) {
+        public static BoxDto of(EdgeBox box) {
+            return new BoxDto(box.getBoxId(), box.getSource(), box.getVersion(), box.getFps(), box.getBuffered(),
+                    box.getUptimeSeconds(), box.getLastSeen(), box.isOnline());
+        }
+    }
 
     public record LoginRequest(@NotBlank @Email String email, @NotBlank String password) {}
 

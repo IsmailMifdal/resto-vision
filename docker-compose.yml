@@ -41,6 +41,7 @@ services:
     depends_on: [mqtt, backend]
     environment:
       RESTOVISION_MQTT_HOST: mqtt
+      RESTOVISION_BOX_ID: salle-simulee
     restart: unless-stopped
 volumes:
   db-data:

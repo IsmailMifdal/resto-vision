@@ -32,6 +32,8 @@ restovision:
   report:
     anthropic-api-key: ${ANTHROPIC_API_KEY:}   # vide : le rapport est rédigé sans IA
     model: ${REPORT_MODEL:claude-opus-5-5}
+  boxes:
+    offline-after-seconds: 90   # sans signal de vie pendant ce temps, un boîtier est hors ligne
   alerts:
     check-interval-ms: 5000
   demo:

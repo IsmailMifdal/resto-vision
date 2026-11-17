@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import os
+import socket
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -22,6 +23,7 @@ class EdgeConfig:
     mqtt_username: str | None = None
     mqtt_password: str | None = None
     mqtt_tls: bool = False
+    box_id: str = "boitier"
     weights: str = "yolo11n.pt"
     confidence: float = 0.35
     fps: float = 5.0
@@ -40,6 +42,8 @@ def load_config(path: str | Path) -> EdgeConfig:
              for z in raw["zones"]]
     return EdgeConfig(
         restaurant_id=raw["restaurantId"],
+        # Nom du boîtier dans l'application. Par défaut, le nom de la machine.
+        box_id=raw.get("boxId") or os.environ.get("RESTOVISION_BOX_ID") or socket.gethostname(),
         zones=zones,
         groups={name: set(labels) for name, labels in raw.get("labels", {"person": ["person"]}).items()},
         stable_seconds=raw.get("stableSeconds", 5.0),

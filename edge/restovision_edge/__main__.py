@@ -5,6 +5,7 @@ import argparse
 import time
 
 from .config import load_config
+from .health import Heartbeat, describe_source
 from .pipeline import Pipeline, layout_event
 from .publisher import MqttPublisher, StdoutPublisher
 
@@ -41,6 +42,13 @@ def main() -> None:
                  if args.publisher == "mqtt" else StdoutPublisher())
     views = []
     layout_sent = 0.0
+    heartbeat = Heartbeat(config.restaurant_id, config.box_id, describe_source(args.source))
+
+    def beat() -> None:
+        heartbeat.frame()
+        event = heartbeat.due(publisher.pending())
+        if event:
+            publisher.publish(event)
 
     def announce_layout() -> None:
         # Le broker garde ce message pour tout backend qui se connecte. On le renvoie toutes les 5 minutes
@@ -61,6 +69,7 @@ def main() -> None:
                 announce_layout()
                 for event in pipeline.process(detections, now):
                     publisher.publish(event)
+                beat()
                 if args.speed > 0:
                     time.sleep(1.0 / args.speed)
         else:
@@ -81,6 +90,7 @@ def main() -> None:
                 announce_layout()
                 for event in pipeline.process(detections, now):
                     publisher.publish(event)
+                beat()
                 if views:
                     image = draw(frame, detections, pipeline.analyzers)
                     for view in views:

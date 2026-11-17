@@ -28,18 +28,24 @@ public class EdgeEventService {
     private final ZoneEventRepository events;
     private final AlertService alertService;
     private final LiveNotifier notifier;
+    private final BoxService boxes;
 
     public EdgeEventService(RestaurantRepository restaurants, ZoneRepository zones, ZoneEventRepository events,
-                            AlertService alertService, LiveNotifier notifier) {
+                            AlertService alertService, LiveNotifier notifier, BoxService boxes) {
         this.restaurants = restaurants;
         this.zones = zones;
         this.events = events;
         this.alertService = alertService;
         this.notifier = notifier;
+        this.boxes = boxes;
     }
 
     @Transactional
     public void handle(EdgeEvent event) {
+        if ("HEARTBEAT".equals(event.type())) {
+            boxes.heartbeat(event);
+            return;
+        }
         if ("LAYOUT".equals(event.type())) {
             handleLayout(event);
             return;

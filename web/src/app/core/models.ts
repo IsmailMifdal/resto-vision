@@ -160,6 +160,21 @@ export interface Report {
   aiAvailable: boolean;
 }
 
+/** Un boîtier d'analyse et son dernier signal de vie. */
+export interface Box {
+  boxId: string;
+  /** « caméra », « vidéo » ou « simulateur ». */
+  source: string | null;
+  version: string | null;
+  /** Images analysées par seconde. */
+  fps: number | null;
+  /** Messages en attente d'envoi sur le boîtier (réseau coupé). */
+  buffered: number;
+  uptimeSeconds: number;
+  lastSeen: string;
+  online: boolean;
+}
+
 export interface Session {
   token: string;
   restaurantCode: string;

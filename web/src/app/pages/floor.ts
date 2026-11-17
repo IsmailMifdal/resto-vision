@@ -31,7 +31,7 @@ interface Placed {
     @if (live.error()) { <p class="error notice">{{ live.error() }}</p> }
 
     <div class="layout">
-      <section class="card room" aria-label="Plan de salle">
+      <section class="card room" aria-label="Plan de salle" [class.stale]="silent()">
         <div class="card-head">
           <h2>Plan de salle</h2>
           <ul class="legend">
@@ -121,6 +121,8 @@ interface Placed {
   `,
   styles: `
     .notice { margin-bottom: 14px; }
+    /* Boîtier muet : le plan reste visible mais s'estompe, ce n'est plus l'état réel. */
+    .stale .plan, .stale .tiles { opacity: 0.45; filter: grayscale(0.6); }
     .layout { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: var(--gap); align-items: start; }
     .side { display: grid; gap: var(--gap); }
     .legend { display: flex; flex-wrap: wrap; gap: 6px 18px; list-style: none; margin: 0; padding: 0; color: var(--muted); }
@@ -182,6 +184,7 @@ export class FloorPage {
   readonly labels = STATE_LABELS;
   readonly alertLabels = ALERT_LABELS;
 
+  readonly silent = computed(() => (this.live.boxes() ?? []).some((box) => !box.online));
   readonly tables = computed(() => this.live.zones().filter((z) => z.type === 'TABLE'));
   readonly queues = computed(() => this.live.zones().filter((z) => z.type === 'QUEUE'));
   readonly counts = computed(() => {
@@ -224,6 +227,11 @@ export class FloorPage {
   /** Ce qui demande de l'attention en premier, en une phrase. */
   readonly finding = computed(() => {
     const tables = this.tables();
+    const silent = (this.live.boxes() ?? []).filter((box) => !box.online);
+    if (silent.length) {
+      const last = silent.reduce((a, b) => (a.lastSeen <= b.lastSeen ? a : b));
+      return `Le boîtier ne répond plus depuis ${formatDuration((this.live.now() - Date.parse(last.lastSeen)) / 1000)} : l’état des tables n’est plus à jour.`;
+    }
     if (!tables.length) return 'En attente du boîtier : aucune table reçue pour l’instant.';
     const open = this.live.alerts().filter((a) => !a.acknowledgedAt);
     if (open.length) {

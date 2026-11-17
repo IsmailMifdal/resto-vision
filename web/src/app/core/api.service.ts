@@ -3,7 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { API_URL } from './config';
 import {
-  Alert, AlertRule, Day, DaySummary, Dish, Forecast, ImportResult, Ingredient, Order, Report, Session, Stats, Stock, Zone,
+  Alert, AlertRule, Box, Day, DaySummary, Dish, Forecast, ImportResult, Ingredient, Order, Report, Session, Stats, Stock, Zone,
 } from './models';
 
 @Injectable({ providedIn: 'root' })
@@ -15,6 +15,9 @@ export class ApiService {
   }
   zones(): Observable<Zone[]> {
     return this.http.get<Zone[]>(`${API_URL}/zones`);
+  }
+  boxes(): Observable<Box[]> {
+    return this.http.get<Box[]>(`${API_URL}/boxes`);
   }
   alerts(): Observable<Alert[]> {
     return this.http.get<Alert[]>(`${API_URL}/alerts`);

@@ -1,7 +1,8 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ApiService } from '../core/api.service';
-import { AlertRule, AlertType, formatDuration } from '../core/models';
+import { LiveService } from '../core/live.service';
+import { AlertRule, AlertType, Box, formatDuration } from '../core/models';
 import { SessionService } from '../core/session.service';
 
 const RULES: Record<AlertType, { title: string; unit: string; sentence: (threshold: string) => string }> = {
@@ -64,6 +65,27 @@ const RULES: Record<AlertType, { title: string; unit: string; sentence: (thresho
 
     <div class="section">
       <div class="about">
+        <h2>Boîtiers</h2>
+        <p class="muted">Le boîtier analyse la vidéo dans le restaurant et envoie un signal toutes les 30 secondes. Sans signal pendant 1 min 30, il est signalé hors ligne.</p>
+      </div>
+      <div class="card panel">
+        @for (box of live.boxes() ?? []; track box.boxId) {
+          <div class="box">
+            <span class="dot" [attr.data-state]="box.online ? 'EMPTY' : 'ALERT'"></span>
+            <div>
+              <strong>{{ box.boxId }}</strong>
+              <span class="muted small num">{{ boxDetail(box) }}</span>
+            </div>
+            <span class="num" [class.error]="!box.online">{{ box.online ? 'En ligne' : 'Hors ligne' }}</span>
+          </div>
+        } @empty {
+          <p class="muted">Aucun boîtier n’a encore donné signe de vie. Lancez-le avec <code>--publisher mqtt</code>.</p>
+        }
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="about">
         <h2>Caméra et zones</h2>
         <p class="muted">Les tables et la file sont dessinées sur l’image de la caméra. Le plan de salle les reprend telles quelles.</p>
       </div>
@@ -90,6 +112,10 @@ const RULES: Record<AlertType, { title: string; unit: string; sentence: (thresho
     .switch input:checked { background: var(--text); }
     .switch input:checked::after { transform: translateX(14px); }
     .switch input:disabled { opacity: 0.5; cursor: default; }
+    .box { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px; width: 100%; min-height: 56px; border-top: 1px solid var(--rule); }
+    .box:first-child { border-top: 0; }
+    .box div { display: grid; }
+    .box strong { font-weight: 500; }
     .threshold { display: inline-flex; align-items: center; gap: 8px; }
     .threshold input { width: 84px; text-align: right; }
     .threshold input:disabled { opacity: 0.5; }
@@ -102,6 +128,7 @@ export class SettingsPage implements OnInit {
   readonly canEdit = this.session?.role !== 'STAFF';
   readonly info = RULES;
 
+  readonly live = inject(LiveService);
   readonly rules = signal<AlertRule[]>([]);
   readonly error = signal<string | null>(null);
   /** Heure du dernier enregistrement réussi, pour le confirmer sans bouton. */
@@ -112,6 +139,15 @@ export class SettingsPage implements OnInit {
       next: (rules) => this.rules.set(rules),
       error: () => this.error.set('Règles indisponibles. Vérifiez que le backend tourne.'),
     });
+  }
+
+  /** « caméra · 4,8 images/s · version 0.2.0 · vu à 14:02 », ou depuis quand il se tait. */
+  boxDetail(box: Box): string {
+    const seen = new Date(box.lastSeen).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+    if (!box.online) return `Dernier signal à ${seen}`;
+    const parts = [box.source, box.fps === null ? null : `${box.fps.toLocaleString('fr-FR')} images/s`,
+      box.version ? `version ${box.version}` : null, box.buffered ? `${box.buffered} messages en attente` : null];
+    return parts.filter(Boolean).join(' · ');
   }
 
   /** Le seuil en clair : « 5 min », « 4 personnes ». */

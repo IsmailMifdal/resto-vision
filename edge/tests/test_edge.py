@@ -202,3 +202,27 @@ def test_layout_is_retained_on_its_own_topic():
     publisher.publish_layout(layout_event(load_config("config/edge.example.json"), 2.0))
     assert [topic for topic, _ in client.sent] == ["restovision/demo/events", "restovision/demo/layout"]
     assert client.retained == [False, True]
+
+
+def test_heartbeat_reports_rate_and_waits_for_its_period():
+    from restovision_edge.health import Heartbeat
+
+    clock = [1000.0]
+    beat = Heartbeat("demo", "salle-1", "caméra", period=30, clock=lambda: clock[0])
+    first = beat.due()
+    assert first.type == "HEARTBEAT" and first.data["boxId"] == "salle-1"   # le premier part tout de suite
+    for _ in range(150):
+        beat.frame()
+    clock[0] += 10
+    assert beat.due() is None
+    clock[0] += 20
+    event = beat.due(buffered=3)
+    assert event.data["fps"] == 5.0 and event.data["uptimeSeconds"] == 30 and event.data["buffered"] == 3
+
+
+def test_source_is_described_without_its_address():
+    from restovision_edge.health import describe_source
+
+    assert describe_source("rtsp://admin:secret@192.168.1.20/flux") == "caméra"
+    assert describe_source("simulate") == "simulateur"
+    assert describe_source("samples/salle.mp4") == "vidéo"

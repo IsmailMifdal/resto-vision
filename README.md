@@ -56,6 +56,14 @@ Sans Docker, le backend tourne aussi sur une base en mémoire :
 `cd backend && mvn spring-boot:run -Dspring-boot.run.profiles=local` (il faut alors un broker MQTT local,
 ou `MQTT_ENABLED=false`).
 
+## Supervision des boîtiers
+
+Chaque boîtier envoie un signal de vie toutes les 30 secondes : sa source (caméra, vidéo, simulateur), le nombre
+d'images analysées par seconde, sa version et les messages en attente si le réseau est coupé. Sans signal pendant
+90 secondes (`restovision.boxes.offline-after-seconds`), le boîtier est déclaré hors ligne : le bandeau de
+l'application l'affiche en rouge et l'écran Salle prévient que l'état des tables n'est plus à jour. Le détail est
+dans Réglages. Le nom d'un boîtier se règle avec `boxId` dans `edge.json` (par défaut, le nom de la machine).
+
 ## Rapport du jour
 
 L'écran « Service » affiche un rapport en phrases pour chaque journée. Les chiffres sont calculés par le

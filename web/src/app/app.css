@@ -21,6 +21,7 @@ nav svg { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColo
 .beacon { width: 8px; height: 8px; border-radius: 50%; background: var(--free); flex: none; animation: beat 2.4s ease-in-out infinite; }
 .pulse.off .beacon { background: var(--alert); animation: none; }
 .clock, .fact { color: var(--muted); }
+.fact.silent { color: var(--alert); font-weight: 500; }
 .fact { display: inline-flex; align-items: center; gap: 7px; }
 @keyframes beat { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
 

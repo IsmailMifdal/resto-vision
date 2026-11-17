@@ -1,5 +1,7 @@
 package com.restovision.api;
 
+import com.restovision.api.Dtos.BoxDto;
+import com.restovision.edge.BoxService;
 import com.restovision.api.Dtos.ForecastDto;
 import com.restovision.api.Dtos.ReportDto;
 import com.restovision.api.Dtos.DayDto;
@@ -34,8 +36,10 @@ import org.springframework.web.bind.annotation.RestController;
 public class ApiController {
     private final AuthService auth;
     private final RestaurantQueryService queries;
+    private final BoxService boxes;
 
-    public ApiController(AuthService auth, RestaurantQueryService queries) {
+    public ApiController(AuthService auth, RestaurantQueryService queries, BoxService boxes) {
+        this.boxes = boxes;
         this.auth = auth;
         this.queries = queries;
     }
@@ -107,6 +111,12 @@ public class ApiController {
     public ForecastDto forecast(@AuthenticationPrincipal Jwt jwt,
                                 @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
         return queries.forecast(restaurantOf(jwt), date);
+    }
+
+    /** Les boîtiers du restaurant et leur dernier signal de vie. */
+    @GetMapping("/boxes")
+    public List<BoxDto> boxes(@AuthenticationPrincipal Jwt jwt) {
+        return boxes.list(restaurantOf(jwt));
     }
 
     @GetMapping("/stats/today")

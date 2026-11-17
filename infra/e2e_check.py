@@ -39,11 +39,13 @@ def main():
                 print("alerte :", alert["message"], flush=True)
             alerts.add(alert["type"])
         time.sleep(2)
+    boxes = call("/boxes", token)
+    print("boîtiers :", [(b["boxId"], b["source"], b["online"]) for b in boxes])
     stats = call("/stats/today", token)
     print("zones :", sorted(zones), "| états vus :", sorted(states), "| alertes vues :", sorted(alerts))
     print("stats :", stats)
     missing = (expected_zones - zones) | (expected_alerts - alerts) | (expected_zones - plans)
-    if missing or stats["tablesTotal"] != 8:
+    if missing or stats["tablesTotal"] != 8 or not any(b["online"] for b in boxes):
         sys.exit(f"ÉCHEC, manquant : {sorted(missing)}")
     print("OK : la chaîne simulateur -> MQTT -> backend -> API fonctionne")
 

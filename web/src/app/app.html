@@ -41,6 +41,7 @@
       <div class="pulse" [class.off]="!live.connected()">
         <span class="beacon" aria-hidden="true"></span>
         <strong>{{ live.connected() ? 'En direct' : 'Hors ligne' }}</strong>
+        @if (silentBox(); as since) { <span class="fact silent"><span class="dot" data-state="ALERT"></span>Boîtier muet depuis {{ since }}</span> }
         <span class="num clock">{{ clock() }}</span>
         @if (summary(); as s) {
           <span class="fact num"><span class="dot" data-state="SERVED"></span>{{ s.occupied }} / {{ s.tables }} tables occupées</span>

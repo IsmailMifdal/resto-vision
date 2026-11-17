@@ -8,7 +8,9 @@ import java.util.List;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record EdgeEvent(String type, String restaurantId, String zoneId, Instant timestamp,
                         String state, String previousState, Integer persons, Integer dishes,
-                        Integer estimatedWaitSeconds, List<ZoneLayout> zones) {
+                        Integer estimatedWaitSeconds, List<ZoneLayout> zones,
+                        String boxId, String source, Double fps, String version, Long uptimeSeconds,
+                        Integer buffered) {
 
     /** Contour d'une zone dans l'image de la caméra. Présent seulement dans un message de type LAYOUT. */
     @JsonIgnoreProperties(ignoreUnknown = true)
@@ -17,15 +19,23 @@ public record EdgeEvent(String type, String restaurantId, String zoneId, Instant
     /** Événement d'état, sans plan. */
     public EdgeEvent(String type, String restaurantId, String zoneId, Instant timestamp, String state,
                      String previousState, Integer persons, Integer dishes, Integer estimatedWaitSeconds) {
-        this(type, restaurantId, zoneId, timestamp, state, previousState, persons, dishes, estimatedWaitSeconds, null);
+        this(type, restaurantId, zoneId, timestamp, state, previousState, persons, dishes, estimatedWaitSeconds, null,
+                null, null, null, null, null, null);
     }
 
     public static EdgeEvent layout(String restaurantId, List<ZoneLayout> zones) {
-        return new EdgeEvent("LAYOUT", restaurantId, null, Instant.now(), null, null, null, null, null, zones);
+        return new EdgeEvent("LAYOUT", restaurantId, null, Instant.now(), null, null, null, null, null, zones,
+                null, null, null, null, null, null);
+    }
+
+    /** Signal de vie d'un boîtier. */
+    public static EdgeEvent heartbeat(String restaurantId, String boxId, String source, double fps, long uptimeSeconds) {
+        return new EdgeEvent("HEARTBEAT", restaurantId, null, Instant.now(), null, null, null, null, null, null,
+                boxId, source, fps, "test", uptimeSeconds, 0);
     }
 
     public EdgeEvent withRestaurant(String otherRestaurantId) {
         return new EdgeEvent(type, otherRestaurantId, zoneId, timestamp, state, previousState, persons, dishes,
-                estimatedWaitSeconds, zones);
+                estimatedWaitSeconds, zones, boxId, source, fps, version, uptimeSeconds, buffered);
     }
 }

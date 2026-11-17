@@ -11,6 +11,7 @@ from .models import Event
 class Publisher(Protocol):
     def publish(self, event: Event) -> None: ...
     def publish_layout(self, event: Event) -> None: ...
+    def pending(self) -> int: ...
     def close(self) -> None: ...
 
 
@@ -19,6 +20,9 @@ class StdoutPublisher:
         print(json.dumps(event.to_json(), ensure_ascii=False), flush=True)
 
     publish_layout = publish
+
+    def pending(self) -> int:
+        return 0
 
     def close(self) -> None:
         pass
@@ -54,6 +58,10 @@ class MqttPublisher:
     def publish_layout(self, event: Event) -> None:
         self.buffer.append((self.layout_topic, json.dumps(event.to_json(), ensure_ascii=False), True))
         self.flush()
+
+    def pending(self) -> int:
+        """Messages en attente d'envoi (réseau coupé)."""
+        return len(self.buffer)
 
     def flush(self) -> None:
         while self.buffer and self.client.is_connected():
