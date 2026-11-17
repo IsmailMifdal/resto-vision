@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 import { authGuard } from './core/auth';
 import { DashboardPage } from './pages/dashboard';
 import { FloorPage } from './pages/floor';
+import { GroupPage } from './pages/group';
 import { LoginPage } from './pages/login';
 import { RoadmapPage } from './pages/roadmap';
 import { SettingsPage } from './pages/settings';
@@ -12,6 +13,7 @@ export const routes: Routes = [
   { path: 'login', component: LoginPage },
   { path: 'salle', component: FloorPage, canActivate: [authGuard] },
   { path: 'service', component: DashboardPage, canActivate: [authGuard] },
+  { path: 'groupe', component: GroupPage, canActivate: [authGuard] },
   { path: 'stock', component: StockPage, canActivate: [authGuard] },
   { path: 'zones', component: ZonesPage, canActivate: [authGuard] },
   { path: 'reglages', component: SettingsPage, canActivate: [authGuard] },

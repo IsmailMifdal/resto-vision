@@ -3,7 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { API_URL } from './config';
 import {
-  Alert, AlertRule, Box, Day, DaySummary, Dish, Forecast, ImportResult, Ingredient, Order, Report, RestaurantSettings, Session, Stats, Stock, WasteDay, Zone,
+  Alert, AlertRule, Box, Day, DaySummary, Dish, Forecast, Group, ImportResult, Ingredient, Order, Report, RestaurantSettings, Session, Stats, Stock, WasteDay, Zone,
 } from './models';
 
 @Injectable({ providedIn: 'root' })
@@ -69,6 +69,10 @@ export class ApiService {
     const form = new FormData();
     form.append('file', file);
     return this.http.post<ImportResult>(`${API_URL}/stock/sales`, form);
+  }
+  /** Les restaurants du groupe côte à côte. Réservé au responsable de groupe. */
+  group(days: number): Observable<Group> {
+    return this.http.get<Group>(`${API_URL}/group`, { params: { days } });
   }
   restaurant(): Observable<RestaurantSettings> {
     return this.http.get<RestaurantSettings>(`${API_URL}/restaurant`);

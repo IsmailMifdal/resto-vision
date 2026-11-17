@@ -18,6 +18,12 @@
           <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 13.5h12M4 11V7M8 11V3.5M12 11V8.5"/></svg>
           <span>Service</span>
         </a>
+        @if (session.role === 'ADMIN') {
+          <a routerLink="/groupe" routerLinkActive="active">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1.75" y="6.5" width="3.5" height="7.5" rx="0.75"/><rect x="6.25" y="2" width="3.5" height="12" rx="0.75"/><rect x="10.75" y="4.5" width="3.5" height="9.5" rx="0.75"/></svg>
+            <span>Groupe</span>
+          </a>
+        }
         <a routerLink="/stock" routerLinkActive="active">
           <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 5 8 2l6 3v6l-6 3-6-3zM2 5l6 3 6-3M8 8v6"/></svg>
           <span>Stock</span>

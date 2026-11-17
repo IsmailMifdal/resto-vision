@@ -4,7 +4,7 @@ import { AnnouncerService } from './core/announcer.service';
 import { LiveService } from './core/live.service';
 import { SessionService } from './core/session.service';
 
-const ROLES: Record<string, string> = { MANAGER: 'Gérant', STAFF: 'Équipe', ADMIN: 'Administrateur' };
+const ROLES: Record<string, string> = { MANAGER: 'Gérant', STAFF: 'Équipe', ADMIN: 'Responsable de groupe' };
 
 @Component({
   imports: [RouterOutlet, RouterLink, RouterLinkActive],

@@ -57,6 +57,13 @@ public class WasteService {
         return new WasteDayDto(day, dayStart, found.size(), withLeftovers, share(found), weekShare, leftovers);
     }
 
+    /** Part des repas avec restes entre deux jours inclus ; null sans repas observé. */
+    @Transactional(readOnly = true)
+    public Integer shareBetween(Restaurant restaurant, LocalDate first, LocalDate last) {
+        return share(returns.findBetween(restaurant, first.atStartOfDay(timezone).toInstant(),
+                last.plusDays(1).atStartOfDay(timezone).toInstant()));
+    }
+
     /** Part des repas qui ont laissé de la nourriture, en pour cent ; null si aucun repas observé. */
     static Integer share(List<PlateReturn> found) {
         if (found.isEmpty()) {

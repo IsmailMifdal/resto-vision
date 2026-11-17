@@ -110,6 +110,14 @@ public final class Dtos {
     public record WasteDayDto(LocalDate date, Instant from, int meals, int withLeftovers, Integer leftoverShare,
                               Integer previousWeekShare, List<PlateReturnDto> leftovers) {}
 
+    /** Un restaurant du groupe sur la période. Durées en secondes ; null quand rien n'a été mesuré. */
+    public record SiteDto(String code, String name, boolean mine, int seatings, Integer averageWaitSeconds,
+                          Integer longestWaitSeconds, Integer averageToClearSeconds, double peakOccupancyRate,
+                          Integer leftoverShare, int boxesOnline, int boxesTotal) {}
+
+    /** Comparaison des restaurants d'un groupe, du jour `from` au jour `to` inclus (journées terminées). */
+    public record GroupDto(String groupCode, int days, LocalDate from, LocalDate to, List<SiteDto> sites) {}
+
     public record LoginRequest(@NotBlank @Email String email, @NotBlank String password) {}
 
     public record LoginResponse(String token, String restaurantCode, String restaurantName, String role) {}

@@ -199,6 +199,30 @@ export interface Box {
   online: boolean;
 }
 
+/** Un restaurant du groupe sur la période. Durées en secondes, null quand rien n'a été mesuré. */
+export interface Site {
+  code: string;
+  name: string;
+  /** Le restaurant de la personne connectée. */
+  mine: boolean;
+  seatings: number;
+  averageWaitSeconds: number | null;
+  longestWaitSeconds: number | null;
+  averageToClearSeconds: number | null;
+  peakOccupancyRate: number;
+  leftoverShare: number | null;
+  boxesOnline: number;
+  boxesTotal: number;
+}
+
+export interface Group {
+  groupCode: string;
+  days: number;
+  from: string;
+  to: string;
+  sites: Site[];
+}
+
 export interface Session {
   token: string;
   restaurantCode: string;

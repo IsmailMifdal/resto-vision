@@ -125,17 +125,24 @@ public class DemoDataSeeder implements CommandLineRunner {
 
     /** Une journée fictive pour une table : déjeuner et dîner, toujours la même pour une date donnée. */
     static List<ZoneEvent> serviceDay(Zone table, int tableNumber, LocalDate date, ZoneId timezone, Instant now) {
+        return serviceDay(table, tableNumber, date, timezone, now, 0);
+    }
+
+    /** `slowerBy` : secondes d'attente en plus à chaque service, pour donner à un site de démo son caractère. */
+    static List<ZoneEvent> serviceDay(Zone table, int tableNumber, LocalDate date, ZoneId timezone, Instant now,
+                                      int slowerBy) {
         Random random = new Random(date.toEpochDay() * 31 + tableNumber);
         boolean busyEvening = date.getDayOfWeek() == DayOfWeek.FRIDAY || date.getDayOfWeek() == DayOfWeek.SATURDAY;
         List<ZoneEvent> out = new ArrayList<>();
-        addService(out, table, date, LocalTime.of(12, 0), LocalTime.of(14, 30), 35, 20, false, random, timezone, now);
-        addService(out, table, date, LocalTime.of(19, 0), LocalTime.of(22, 30), 50, 30, busyEvening, random, timezone, now);
+        addService(out, table, date, LocalTime.of(12, 0), LocalTime.of(14, 30), 35, 20, false, random, timezone, now, slowerBy);
+        addService(out, table, date, LocalTime.of(19, 0), LocalTime.of(22, 30), 50, 30, busyEvening, random, timezone, now,
+                slowerBy);
         return out;
     }
 
     private static void addService(List<ZoneEvent> out, Zone table, LocalDate date, LocalTime opens, LocalTime closes,
                                    int mealMinutes, int mealSpread, boolean busy, Random random, ZoneId timezone,
-                                   Instant now) {
+                                   Instant now, int slowerBy) {
         Instant close = date.atTime(closes).atZone(timezone).toInstant();
         Instant seated = date.atTime(opens).atZone(timezone).toInstant()
                 .plus(Duration.ofMinutes(random.nextInt(busy ? 12 : 30)));
@@ -145,6 +152,7 @@ public class DemoDataSeeder implements CommandLineRunner {
             if (busy) {
                 waitSeconds += 120;
             }
+            waitSeconds += slowerBy;
             int clearSeconds = random.nextInt(8) == 0 ? 540 + random.nextInt(300) : 120 + random.nextInt(300);
             Instant served = seated.plusSeconds(waitSeconds);
             Instant left = served.plus(Duration.ofMinutes(mealMinutes + random.nextInt(mealSpread)));

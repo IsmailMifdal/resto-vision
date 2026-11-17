@@ -21,8 +21,4 @@ public class ComingSoonController {
 
 
 
-    @GetMapping("/sites")
-    public ResponseEntity<Map<String, String>> sites() {
-        return planned("Comparaison multi-sites", "V3");
-    }
 }

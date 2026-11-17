@@ -56,6 +56,13 @@ Sans Docker, le backend tourne aussi sur une base en mémoire :
 `cd backend && mvn spring-boot:run -Dspring-boot.run.profiles=local` (il faut alors un broker MQTT local,
 ou `MQTT_ENABLED=false`).
 
+## Comparaison multi-sites
+
+Les restaurants qui partagent un `groupCode` forment un groupe. Le responsable de groupe (rôle `ADMIN`) voit
+l'écran « Groupe » : un classement des sites sur une mesure au choix (attente, occupation, repas avec restes) et
+un tableau de tous les indicateurs, sur les 7, 14 ou 28 dernières journées terminées. Un gérant (`MANAGER`) ne
+voit que son restaurant. Démonstration : le compte `groupe@restovision.local` / `demo1234` voit trois sites.
+
 ## Alertes sans regarder l'écran
 
 Sur l'écran Salle, chaque appareil de l'équipe peut activer :

@@ -1,5 +1,7 @@
 package com.restovision.api;
 
+import com.restovision.api.Dtos.GroupDto;
+import com.restovision.multisite.GroupComparisonService;
 import com.restovision.report.ReportMailer;
 import java.util.Map;
 import com.restovision.api.Dtos.LocationUpdate;
@@ -45,10 +47,12 @@ public class ApiController {
     private final BoxService boxes;
     private final WasteService waste;
     private final ReportMailer mailer;
+    private final GroupComparisonService group;
 
     public ApiController(AuthService auth, RestaurantQueryService queries, BoxService boxes, WasteService waste,
-                         ReportMailer mailer) {
+                         ReportMailer mailer, GroupComparisonService group) {
         this.mailer = mailer;
+        this.group = group;
         this.boxes = boxes;
         this.waste = waste;
         this.auth = auth;
@@ -146,6 +150,12 @@ public class ApiController {
     @GetMapping("/boxes")
     public List<BoxDto> boxes(@AuthenticationPrincipal Jwt jwt) {
         return boxes.list(restaurantOf(jwt));
+    }
+
+    /** Les restaurants du groupe côte à côte. Réservé au responsable de groupe (ADMIN). */
+    @GetMapping("/group")
+    public GroupDto group(@AuthenticationPrincipal Jwt jwt, @RequestParam(defaultValue = "7") int days) {
+        return group.compare(restaurantOf(jwt), days);
     }
 
     /** Les envois possibles depuis l'application. */
