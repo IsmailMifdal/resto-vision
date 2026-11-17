@@ -48,6 +48,9 @@ public class EdgeBox {
     @Column(nullable = false)
     private boolean online;
 
+    @Column(name = "update_error", length = 200)
+    private String updateError;
+
     protected EdgeBox() {}
 
     public EdgeBox(Restaurant restaurant, String boxId) {
@@ -55,7 +58,9 @@ public class EdgeBox {
         this.boxId = boxId;
     }
 
-    public void heard(String source, String version, Double fps, int buffered, long uptimeSeconds, Instant at) {
+    public void heard(String source, String version, Double fps, int buffered, long uptimeSeconds, Instant at,
+                      String updateError) {
+        this.updateError = cut(updateError, 200);
         this.source = cut(source, 40);
         this.version = cut(version, 40);
         this.fps = fps;
@@ -82,4 +87,5 @@ public class EdgeBox {
     public long getUptimeSeconds() { return uptimeSeconds; }
     public Instant getLastSeen() { return lastSeen; }
     public boolean isOnline() { return online; }
+    public String getUpdateError() { return updateError; }
 }

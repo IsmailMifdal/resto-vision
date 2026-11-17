@@ -218,6 +218,7 @@ def test_heartbeat_reports_rate_and_waits_for_its_period():
     clock[0] += 20
     event = beat.due(buffered=3)
     assert event.data["fps"] == 5.0 and event.data["uptimeSeconds"] == 30 and event.data["buffered"] == 3
+    assert event.data["updateError"] is None
 
 
 def test_source_is_described_without_its_address():

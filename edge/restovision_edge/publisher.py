@@ -42,7 +42,7 @@ class MqttPublisher:
             import paho.mqtt.client as mqtt  # import tardif : inutile pour les tests
 
             client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
-            client.on_connect = lambda *_: self.flush()
+            client.on_connect = lambda *_: self._connected()
             if username:
                 client.username_pw_set(username, password)
             if tls:
@@ -50,6 +50,19 @@ class MqttPublisher:
             client.connect_async(host, port)
             client.loop_start()
         self.client = client
+        self.subscriptions: dict[str, object] = {}
+
+    def subscribe(self, topic: str, callback) -> None:
+        """Reçoit les messages d'un sujet ; l'abonnement est refait à chaque reconnexion."""
+        self.subscriptions[topic] = callback
+        self.client.message_callback_add(topic, lambda _client, _userdata, message: callback(message.payload))
+        if self.client.is_connected():
+            self.client.subscribe(topic, qos=1)
+
+    def _connected(self) -> None:
+        for topic in self.subscriptions:
+            self.client.subscribe(topic, qos=1)
+        self.flush()
 
     def publish(self, event: Event) -> None:
         self.buffer.append((self.topic, json.dumps(event.to_json(), ensure_ascii=False), False))

@@ -27,13 +27,16 @@ public class BoxService {
     private final RestaurantRepository restaurants;
     private final EdgeBoxRepository boxes;
     private final LiveNotifier notifier;
+    private final ReleaseTracker releases;
     private final long offlineAfterSeconds;
 
     public BoxService(RestaurantRepository restaurants, EdgeBoxRepository boxes, LiveNotifier notifier,
+                      ReleaseTracker releases,
                       @Value("${restovision.boxes.offline-after-seconds:90}") long offlineAfterSeconds) {
         this.restaurants = restaurants;
         this.boxes = boxes;
         this.notifier = notifier;
+        this.releases = releases;
         this.offlineAfterSeconds = offlineAfterSeconds;
     }
 
@@ -56,9 +59,9 @@ public class BoxService {
         }
         // L'heure du serveur fait foi : l'horloge d'un boîtier peut dériver.
         box.heard(event.source(), event.version(), event.fps(), event.buffered() == null ? 0 : event.buffered(),
-                event.uptimeSeconds() == null ? 0 : event.uptimeSeconds(), Instant.now());
+                event.uptimeSeconds() == null ? 0 : event.uptimeSeconds(), Instant.now(), event.updateError());
         boxes.save(box);
-        notifier.box(restaurant.getCode(), BoxDto.of(box));
+        notifier.box(restaurant.getCode(), BoxDto.of(box, releases.latest()));
     }
 
     /** Déclare hors ligne les boîtiers silencieux. */
@@ -73,7 +76,7 @@ public class BoxService {
             box.markOffline();
             log.warn("Boîtier {} de {} hors ligne : aucun signal depuis {}", box.getBoxId(),
                     box.getRestaurant().getCode(), box.getLastSeen());
-            notifier.box(box.getRestaurant().getCode(), BoxDto.of(box));
+            notifier.box(box.getRestaurant().getCode(), BoxDto.of(box, releases.latest()));
         }
     }
 
@@ -81,6 +84,6 @@ public class BoxService {
     public List<BoxDto> list(String restaurantCode) {
         Restaurant restaurant = restaurants.findByCode(restaurantCode)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Restaurant introuvable"));
-        return boxes.findByRestaurantOrderByBoxIdAsc(restaurant).stream().map(BoxDto::of).toList();
+        return boxes.findByRestaurantOrderByBoxIdAsc(restaurant).stream().map(box -> BoxDto.of(box, releases.latest())).toList();
     }
 }

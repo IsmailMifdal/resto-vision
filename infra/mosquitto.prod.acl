@@ -2,8 +2,14 @@
 user backend
 topic read restovision/+/events
 topic read restovision/+/layout
+topic read restovision/updates
+
+# L'éditeur publie les versions signées du boîtier. Ce compte ne sert qu'à ça.
+user editeur
+topic write restovision/updates
 
 # Un bloc par boîtier : il n'écrit que pour son restaurant. Dupliquer pour chaque boîtier.
 user boitier-demo
 topic write restovision/demo/events
 topic write restovision/demo/layout
+topic read restovision/updates

@@ -28,6 +28,8 @@ def main() -> None:
     parser.add_argument("--preview", metavar="FICHIER.mp4", help="enregistrer l'image annotée (zones et états)")
     parser.add_argument("--preview-port", type=int, metavar="PORT",
                         help="voir l'image annotée en direct sur http://127.0.0.1:PORT (reste sur ce poste)")
+    parser.add_argument("--update-root", metavar="DOSSIER",
+                        help="dossier des versions (donné par le lanceur) : active la mise à jour à distance")
     parser.add_argument("--calibrate", type=float, metavar="SECONDES", default=0,
                         help="salle dressée et vide : mesurer la vaisselle de chaque table, puis s'arrêter")
     args = parser.parse_args()
@@ -43,12 +45,23 @@ def main() -> None:
     views = []
     layout_sent = 0.0
     heartbeat = Heartbeat(config.restaurant_id, config.box_id, describe_source(args.source))
+    updater = None
+    if args.update_root and config.update_public_key and isinstance(publisher, MqttPublisher):
+        from . import __version__
+        from .updater import UPDATE_TOPIC, Updater, VersionStore
 
-    def beat() -> None:
+        updater = Updater(VersionStore(args.update_root), config.update_public_key, __version__)
+        publisher.subscribe(UPDATE_TOPIC, updater.handle)
+
+    def beat() -> bool:
+        """Signal de vie ; renvoie vrai quand une nouvelle version est installée et qu'il faut redémarrer."""
         heartbeat.frame()
-        event = heartbeat.due(publisher.pending())
+        event = heartbeat.due(publisher.pending(), updater.last_error if updater else None)
         if event:
             publisher.publish(event)
+        return bool(updater and updater.restart_requested)
+
+    restart = False
 
     def announce_layout() -> None:
         # Le broker garde ce message pour tout backend qui se connecte. On le renvoie toutes les 5 minutes
@@ -69,7 +82,9 @@ def main() -> None:
                 announce_layout()
                 for event in pipeline.process(detections, now):
                     publisher.publish(event)
-                beat()
+                if beat():
+                    restart = True
+                    break
                 if args.speed > 0:
                     time.sleep(1.0 / args.speed)
         else:
@@ -90,7 +105,9 @@ def main() -> None:
                 announce_layout()
                 for event in pipeline.process(detections, now):
                     publisher.publish(event)
-                beat()
+                if beat():
+                    restart = True
+                    break
                 if views:
                     image = draw(frame, detections, pipeline.analyzers)
                     for view in views:
@@ -101,6 +118,11 @@ def main() -> None:
         publisher.close()
         for view in views:
             view.close()
+    if restart:
+        from .updater import RESTART_CODE
+
+        print("Nouvelle version installée : redémarrage par le lanceur.", flush=True)
+        raise SystemExit(RESTART_CODE)
 
 
 def calibrate(config, source: str, seconds: float) -> None:

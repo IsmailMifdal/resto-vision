@@ -28,7 +28,7 @@ class Heartbeat:
     def frame(self) -> None:
         self.frames += 1
 
-    def due(self, buffered: int = 0) -> Event | None:
+    def due(self, buffered: int = 0, update_error: str | None = None) -> Event | None:
         """L'événement à publier s'il est temps, sinon None. Le premier part tout de suite."""
         now = self.clock()
         elapsed = now - self.window_start
@@ -42,7 +42,7 @@ class Heartbeat:
             zone_id="",
             timestamp=now,
             data={"boxId": self.box_id, "source": self.source, "fps": fps, "version": __version__,
-                  "uptimeSeconds": int(now - self.started), "buffered": buffered},
+                  "uptimeSeconds": int(now - self.started), "buffered": buffered, "updateError": update_error},
         )
 
 

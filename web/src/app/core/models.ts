@@ -200,6 +200,10 @@ export interface Box {
   uptimeSeconds: number;
   lastSeen: string;
   online: boolean;
+  /** Dernière version publiée pour les boîtiers, ou null si aucune. */
+  latestVersion: string | null;
+  /** Dernier échec de mise à jour (« signature invalide »…), ou null. */
+  updateError: string | null;
 }
 
 /** Un restaurant du groupe sur la période. Durées en secondes, null quand rien n'a été mesuré. */

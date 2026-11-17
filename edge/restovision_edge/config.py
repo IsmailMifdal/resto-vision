@@ -24,6 +24,8 @@ class EdgeConfig:
     mqtt_password: str | None = None
     mqtt_tls: bool = False
     box_id: str = "boitier"
+    # Clé publique de l'éditeur (Ed25519, base64). Absente : pas de mise à jour à distance.
+    update_public_key: str | None = None
     weights: str = "yolo11n.pt"
     confidence: float = 0.35
     fps: float = 5.0
@@ -56,6 +58,7 @@ def load_config(path: str | Path) -> EdgeConfig:
         mqtt_username=mqtt.get("username"),
         mqtt_password=mqtt.get("password") or os.environ.get("RESTOVISION_MQTT_PASSWORD"),
         mqtt_tls=bool(mqtt.get("tls", False)),
+        update_public_key=(raw.get("update") or {}).get("publicKey"),
         weights=model.get("weights", "yolo11n.pt"),
         confidence=model.get("confidence", 0.35),
         fps=model.get("fps", 5.0),

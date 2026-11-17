@@ -22,6 +22,38 @@ Dans `config/edge.json`, régler `restaurantId` et le bloc `mqtt` (adresse du se
 `username`). Le mot de passe se met dans la variable d'environnement `RESTOVISION_MQTT_PASSWORD`,
 pas dans le fichier.
 
+Dans `edge.json`, ajouter aussi la clé publique de l'éditeur, qui sert à vérifier les mises à jour :
+`"update": { "publicKey": "<clé publique>" }`.
+
+### Lancer le boîtier sous son lanceur
+
+Le boîtier tourne sous un lanceur, qui le redémarre s'il s'arrête, installe les mises à jour et revient à la
+version précédente si une nouvelle version plante :
+
+```bash
+python -m restovision_edge.launcher --root /opt/restovision -- \
+    --config config/edge.json --source rtsp://... --publisher mqtt
+```
+
+Pour qu'il démarre avec la machine, en faire un service (Linux, `/etc/systemd/system/restovision.service`) :
+
+```ini
+[Unit]
+Description=Boîtier RestoVision
+After=network-online.target
+
+[Service]
+WorkingDirectory=/opt/restovision-install/edge
+Environment=RESTOVISION_MQTT_PASSWORD=<mot de passe du boîtier>
+ExecStart=/usr/bin/python3 -m restovision_edge.launcher --root /opt/restovision -- --config config/edge.json --source rtsp://... --publisher mqtt
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+```
+
+puis `systemctl enable --now restovision`.
+
 ## 2. Dessiner les zones
 
 1. Lancer le boîtier avec l'aperçu :

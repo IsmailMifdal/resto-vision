@@ -105,6 +105,31 @@ Limite : le modèle de base reconnaît des aliments (pizza, sandwich, gâteau, f
 assiettes. Un plat qu'il ne sait pas nommer n'est pas compté. Un modèle entraîné sur les assiettes du restaurant
 pilote remplacera la liste `labels.food` de `edge.json`.
 
+## Mise à jour à distance des boîtiers
+
+Une nouvelle version du boîtier se publie depuis le poste de l'éditeur ; chaque boîtier l'installe seul.
+
+```bash
+cd edge
+python -m restovision_edge.release keygen --out ~/cles-restovision      # une seule fois
+# augmenter __version__ dans restovision_edge/__init__.py, puis :
+python -m restovision_edge.release build --key ~/cles-restovision/restovision-edge.key --out version.json
+python -m restovision_edge.release publish --manifest version.json --host <broker> --port 8883 --tls \
+    --username editeur --password <mot de passe>
+```
+
+Sécurité : chaque version est signée (Ed25519) avec une clé privée qui reste chez l'éditeur, hors du serveur. Le
+boîtier ne connaît que la clé publique (`update.publicKey` dans `edge.json`) et refuse un paquet dont la signature
+ou l'empreinte ne correspond pas, une version plus ancienne que la sienne, ou un fichier qui sortirait de son
+dossier. Un serveur ou un broker piraté ne peut donc pas installer de code. La version arrive par la connexion MQTT
+que le boîtier ouvre déjà (message conservé sur `restovision/updates`) : aucune connexion entrante.
+
+Le boîtier tourne sous `restovision_edge.launcher` (voir `docs/INSTALLATION.md`) : la nouvelle version est installée
+à côté de l'ancienne ; si elle plante deux fois au démarrage, le lanceur revient à la dernière version qui a tenu
+2 minutes et ne la réessaie plus. Réglages affiche la version de chaque boîtier, la dernière publiée et le
+dernier refus. `release publish --clear` retire la version publiée. Sans clé publique dans `edge.json`, le boîtier
+ignore les mises à jour (c'est le cas du simulateur de démonstration).
+
 ## Rapport du jour
 
 L'écran « Service » affiche un rapport en phrases pour chaque journée. Les chiffres sont calculés par le

@@ -94,11 +94,12 @@ public final class Dtos {
                                  @jakarta.validation.constraints.DecimalMin("-180") @jakarta.validation.constraints.DecimalMax("180") Double longitude) {}
 
     /** État d'un boîtier. `fps` : images analysées par seconde sur la dernière demi-minute. */
+    /** `latestVersion` : dernière version publiée pour les boîtiers ; `updateError` : dernier échec de mise à jour. */
     public record BoxDto(String boxId, String source, String version, Double fps, int buffered, long uptimeSeconds,
-                         Instant lastSeen, boolean online) {
-        public static BoxDto of(EdgeBox box) {
+                         Instant lastSeen, boolean online, String latestVersion, String updateError) {
+        public static BoxDto of(EdgeBox box, String latestVersion) {
             return new BoxDto(box.getBoxId(), box.getSource(), box.getVersion(), box.getFps(), box.getBuffered(),
-                    box.getUptimeSeconds(), box.getLastSeen(), box.isOnline());
+                    box.getUptimeSeconds(), box.getLastSeen(), box.isOnline(), latestVersion, box.getUpdateError());
         }
     }
 

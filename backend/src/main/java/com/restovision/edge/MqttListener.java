@@ -31,6 +31,7 @@ public class MqttListener implements MqttCallback {
     private final String password;
     private final ObjectMapper mapper;
     private final EdgeEventService service;
+    private final ReleaseTracker releases;
     private MqttClient client;
     /** Vrai une fois l'application démarrée, données de démonstration comprises. */
     private volatile boolean ready;
@@ -40,7 +41,7 @@ public class MqttListener implements MqttCallback {
                         @Value("${restovision.mqtt.layout-topic:restovision/+/layout}") String layoutTopic,
                         @Value("${restovision.mqtt.username:}") String username,
                         @Value("${restovision.mqtt.password:}") String password,
-                        ObjectMapper mapper, EdgeEventService service) {
+                        ObjectMapper mapper, EdgeEventService service, ReleaseTracker releases) {
         this.url = url;
         this.topic = topic;
         this.layoutTopic = layoutTopic;
@@ -48,6 +49,7 @@ public class MqttListener implements MqttCallback {
         this.password = password;
         this.mapper = mapper;
         this.service = service;
+        this.releases = releases;
     }
 
     /** On n'écoute le broker qu'après le démarrage complet : un message ne doit pas croiser l'initialisation. */
@@ -76,7 +78,7 @@ public class MqttListener implements MqttCallback {
                     options.setPassword(password.toCharArray());
                 }
                 client.connect(options);
-                client.subscribe(new String[] {topic, layoutTopic}, new int[] {1, 1});
+                client.subscribe(new String[] {topic, layoutTopic, "restovision/updates"}, new int[] {1, 1, 1});
                 log.info("Connecté au broker MQTT {} (topic {})", url, topic);
             }
         } catch (MqttException e) {
@@ -86,6 +88,10 @@ public class MqttListener implements MqttCallback {
 
     @Override
     public void messageArrived(String messageTopic, MqttMessage message) {
+        if ("restovision/updates".equals(messageTopic)) {
+            releases.onManifest(message.getPayload());
+            return;
+        }
         try {
             service.handle(mapper.readValue(message.getPayload(), EdgeEvent.class));
         } catch (Exception e) {

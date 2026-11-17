@@ -97,6 +97,7 @@ const RULES: Record<AlertType, { title: string; unit: string; sentence: (thresho
               <span class="muted small num">{{ boxDetail(box) }}</span>
             </div>
             <span class="num" [class.error]="!box.online">{{ box.online ? 'En ligne' : 'Hors ligne' }}</span>
+            @if (updateNote(box); as note) { <p class="update small" [class.error]="box.updateError">{{ note }}</p> }
           </div>
         } @empty {
           <p class="muted">Aucun boîtier n’a encore donné signe de vie. Lancez-le avec <code>--publisher mqtt</code>.</p>
@@ -138,6 +139,8 @@ const RULES: Record<AlertType, { title: string; unit: string; sentence: (thresho
     .box { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px; width: 100%; min-height: 56px; border-top: 1px solid var(--rule); }
     .box:first-child { border-top: 0; }
     .box div { display: grid; }
+    .box .update { grid-column: 2 / -1; margin: -6px 0 10px; color: var(--muted); }
+    .box .update.error { color: var(--alert); }
     .box strong { font-weight: 500; }
     .threshold { display: inline-flex; align-items: center; gap: 8px; }
     .threshold input { width: 84px; text-align: right; }
@@ -178,6 +181,16 @@ export class SettingsPage implements OnInit {
       },
       error: (e) => this.error.set(e.error?.message || 'La position n’a pas pu être enregistrée.'),
     });
+  }
+
+  /** Où en est le boîtier par rapport à la dernière version publiée. */
+  updateNote(box: Box): string | null {
+    if (box.updateError) return `Mise à jour refusée : ${box.updateError}. Le boîtier garde sa version.`;
+    if (!box.latestVersion || !box.version) return null;
+    const newer = box.latestVersion.split('.').map(Number);
+    const own = box.version.split('.').map(Number);
+    const behind = newer.some((n, i) => n !== (own[i] ?? 0)) && newer.join('.') > own.join('.');
+    return behind ? `Version ${box.latestVersion} publiée : installation au prochain signal du boîtier.` : 'À jour.';
   }
 
   /** « caméra · 4,8 images/s · version 0.2.0 · vu à 14:02 », ou depuis quand il se tait. */
