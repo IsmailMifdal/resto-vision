@@ -1,5 +1,6 @@
 import { Component, computed, effect, inject } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { AnnouncerService } from './core/announcer.service';
 import { LiveService } from './core/live.service';
 import { SessionService } from './core/session.service';
 
@@ -14,6 +15,8 @@ const ROLES: Record<string, string> = { MANAGER: 'Gérant', STAFF: 'Équipe', AD
 export class App {
   private readonly router = inject(Router);
   protected readonly live = inject(LiveService);
+  /** Démarré ici pour annoncer les alertes quel que soit l'écran ouvert. */
+  private readonly announcer = inject(AnnouncerService);
   protected readonly sessions = inject(SessionService);
 
   /** L'état de la salle en une ligne, visible depuis tous les écrans. */

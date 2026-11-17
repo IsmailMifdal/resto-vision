@@ -56,6 +56,20 @@ Sans Docker, le backend tourne aussi sur une base en mémoire :
 `cd backend && mvn spring-boot:run -Dspring-boot.run.profiles=local` (il faut alors un broker MQTT local,
 ou `MQTT_ENABLED=false`).
 
+## Alertes sans regarder l'écran
+
+Sur l'écran Salle, chaque appareil de l'équipe peut activer :
+
+- **Annonces vocales** : chaque nouvelle alerte est dite en français (« Table 4 : clients pas encore servis »),
+  dans le haut-parleur ou l'oreillette reliée au téléphone, avec une vibration. Une alerte que personne n'a
+  prise en charge est rappelée au bout de 2 minutes.
+- **Notifications** : la même alerte en notification ; une montre connectée au téléphone la reprend.
+
+Le réglage reste sur l'appareil et fonctionne quel que soit l'écran ouvert. Les alertes déjà présentes à
+l'ouverture ne sont pas relues. Limites : l'application doit rester ouverte (pas d'envoi quand le navigateur est
+fermé) ; sur iPhone, les notifications web demandent d'ajouter l'application à l'écran d'accueil ; les
+notifications et le service worker exigent HTTPS, sauf sur `localhost`.
+
 ## Supervision des boîtiers
 
 Chaque boîtier envoie un signal de vie toutes les 30 secondes : sa source (caméra, vidéo, simulateur), le nombre

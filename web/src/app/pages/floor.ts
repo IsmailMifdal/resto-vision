@@ -1,4 +1,5 @@
 import { Component, computed, inject } from '@angular/core';
+import { AnnouncerService } from '../core/announcer.service';
 import { LiveService } from '../core/live.service';
 import { Alert, STATE_LABELS, TableState, Zone, formatDuration } from '../core/models';
 
@@ -26,6 +27,20 @@ interface Placed {
       <div>
         <h1>Salle</h1>
         <p>{{ finding() }}</p>
+      </div>
+      <div class="announce" role="group" aria-label="Alertes sans regarder l’écran">
+        @if (announcer.voiceSupported) {
+          <button [class.on]="announcer.voice()" [attr.aria-pressed]="announcer.voice()" (click)="announcer.toggleVoice()">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 6h2.5l3.5-3v10l-3.5-3H2.5z"/>@if (announcer.voice()) {<path d="M11 5.5a3.5 3.5 0 0 1 0 5M12.8 3.8a6 6 0 0 1 0 8.4"/>}</svg>
+            {{ announcer.voice() ? 'Annonces vocales' : 'Annonces coupées' }}
+          </button>
+        }
+        @if (announcer.notifySupported) {
+          <button [class.on]="announcer.notify()" [attr.aria-pressed]="announcer.notify()" (click)="announcer.toggleNotify()">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 11V7a4 4 0 0 1 8 0v4l1.5 1.5h-11zM6.5 13.5a1.5 1.5 0 0 0 3 0"/></svg>
+            {{ announcer.notify() ? 'Notifications' : 'Notifications coupées' }}
+          </button>
+        }
       </div>
     </div>
     @if (live.error()) { <p class="error notice">{{ live.error() }}</p> }
@@ -121,6 +136,10 @@ interface Placed {
   `,
   styles: `
     .notice { margin-bottom: 14px; }
+    .announce { display: flex; gap: 8px; flex-wrap: wrap; }
+    .announce button { color: var(--muted); background: transparent; box-shadow: inset 0 0 0 1px var(--control); }
+    .announce button.on { color: var(--text); background: var(--raised); box-shadow: none; }
+    .announce svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
     /* Boîtier muet : le plan reste visible mais s'estompe, ce n'est plus l'état réel. */
     .stale .plan, .stale .tiles { opacity: 0.45; filter: grayscale(0.6); }
     .layout { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: var(--gap); align-items: start; }
@@ -180,6 +199,7 @@ interface Placed {
 })
 export class FloorPage {
   readonly live = inject(LiveService);
+  readonly announcer = inject(AnnouncerService);
   readonly states = STATES;
   readonly labels = STATE_LABELS;
   readonly alertLabels = ALERT_LABELS;
