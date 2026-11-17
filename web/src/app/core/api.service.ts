@@ -3,7 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { API_URL } from './config';
 import {
-  Alert, AlertRule, Box, Day, DaySummary, Dish, Forecast, ImportResult, Ingredient, Order, Report, Session, Stats, Stock, WasteDay, Zone,
+  Alert, AlertRule, Box, Day, DaySummary, Dish, Forecast, ImportResult, Ingredient, Order, Report, RestaurantSettings, Session, Stats, Stock, WasteDay, Zone,
 } from './models';
 
 @Injectable({ providedIn: 'root' })
@@ -69,6 +69,12 @@ export class ApiService {
     const form = new FormData();
     form.append('file', file);
     return this.http.post<ImportResult>(`${API_URL}/stock/sales`, form);
+  }
+  restaurant(): Observable<RestaurantSettings> {
+    return this.http.get<RestaurantSettings>(`${API_URL}/restaurant`);
+  }
+  updateLocation(latitude: number | null, longitude: number | null): Observable<RestaurantSettings> {
+    return this.http.put<RestaurantSettings>(`${API_URL}/restaurant/location`, { latitude, longitude });
   }
   /** Affluence attendue demain. */
   forecast(): Observable<Forecast> {

@@ -1,5 +1,7 @@
 package com.restovision.api;
 
+import com.restovision.api.Dtos.LocationUpdate;
+import com.restovision.api.Dtos.RestaurantDto;
 import com.restovision.api.Dtos.WasteDayDto;
 import com.restovision.waste.WasteService;
 import com.restovision.api.Dtos.BoxDto;
@@ -108,6 +110,17 @@ public class ApiController {
     public ReportDto rewriteDailyReport(@AuthenticationPrincipal Jwt jwt,
                                         @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
         return queries.dailyReport(restaurantOf(jwt), date, true);
+    }
+
+    @GetMapping("/restaurant")
+    public RestaurantDto restaurant(@AuthenticationPrincipal Jwt jwt) {
+        return queries.restaurantSettings(restaurantOf(jwt));
+    }
+
+    /** Position du restaurant, pour la météo de la prévision. Réservé au gérant. */
+    @PutMapping("/restaurant/location")
+    public RestaurantDto updateLocation(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody LocationUpdate update) {
+        return queries.updateLocation(restaurantOf(jwt), update);
     }
 
     /** Affluence attendue heure par heure. Sans date : demain. */

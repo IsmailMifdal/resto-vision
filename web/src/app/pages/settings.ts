@@ -2,7 +2,7 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ApiService } from '../core/api.service';
 import { LiveService } from '../core/live.service';
-import { AlertRule, AlertType, Box, formatDuration } from '../core/models';
+import { AlertRule, AlertType, Box, RestaurantSettings, formatDuration } from '../core/models';
 import { SessionService } from '../core/session.service';
 
 const RULES: Record<AlertType, { title: string; unit: string; sentence: (threshold: string) => string }> = {
@@ -65,6 +65,21 @@ const RULES: Record<AlertType, { title: string; unit: string; sentence: (thresho
 
     <div class="section">
       <div class="about">
+        <h2>Position du restaurant</h2>
+        <p class="muted">Sert à la météo de la prévision d’affluence. Les coordonnées sont envoyées à Open-Meteo, un service météo gratuit ; rien d’autre ne l’est.</p>
+      </div>
+      <form class="card panel location" (submit)="saveLocation($event)">
+        <div class="pair">
+          <label>Latitude <input class="num" name="latitude" type="number" step="any" min="-90" max="90" [value]="place()?.latitude ?? ''" [disabled]="!canEdit" placeholder="ex. 48.8566"></label>
+          <label>Longitude <input class="num" name="longitude" type="number" step="any" min="-180" max="180" [value]="place()?.longitude ?? ''" [disabled]="!canEdit" placeholder="ex. 2.3522"></label>
+        </div>
+        <p class="muted small">{{ place()?.latitude !== null && place()?.latitude !== undefined ? 'Météo prise en compte dans la prévision.' : 'Aucune position : la prévision se fait sans météo.' }} Laissez les deux champs vides pour ne plus envoyer la position.</p>
+        @if (canEdit) { <button type="submit">Enregistrer la position</button> }
+      </form>
+    </div>
+
+    <div class="section">
+      <div class="about">
         <h2>Boîtiers</h2>
         <p class="muted">Le boîtier analyse la vidéo dans le restaurant et envoie un signal toutes les 30 secondes. Sans signal pendant 1 min 30, il est signalé hors ligne.</p>
       </div>
@@ -112,6 +127,9 @@ const RULES: Record<AlertType, { title: string; unit: string; sentence: (thresho
     .switch input:checked { background: var(--text); }
     .switch input:checked::after { transform: translateX(14px); }
     .switch input:disabled { opacity: 0.5; cursor: default; }
+    .location .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%; }
+    .location label { display: grid; gap: 8px; font-weight: 500; }
+    .location button { margin-top: 8px; }
     .box { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px; width: 100%; min-height: 56px; border-top: 1px solid var(--rule); }
     .box:first-child { border-top: 0; }
     .box div { display: grid; }
@@ -130,14 +148,30 @@ export class SettingsPage implements OnInit {
 
   readonly live = inject(LiveService);
   readonly rules = signal<AlertRule[]>([]);
+  readonly place = signal<RestaurantSettings | null>(null);
   readonly error = signal<string | null>(null);
   /** Heure du dernier enregistrement réussi, pour le confirmer sans bouton. */
   readonly saved = signal<string | null>(null);
 
   ngOnInit(): void {
+    this.api.restaurant().subscribe({ next: (place) => this.place.set(place), error: () => undefined });
     this.api.rules().subscribe({
       next: (rules) => this.rules.set(rules),
       error: () => this.error.set('Règles indisponibles. Vérifiez que le backend tourne.'),
+    });
+  }
+
+  saveLocation(event: Event): void {
+    event.preventDefault();
+    const data = new FormData(event.target as HTMLFormElement);
+    const read = (name: string) => (String(data.get(name) ?? '').trim() === '' ? null : Number(data.get(name)));
+    this.api.updateLocation(read('latitude'), read('longitude')).subscribe({
+      next: (place) => {
+        this.place.set(place);
+        this.saved.set(new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+        this.error.set(null);
+      },
+      error: (e) => this.error.set(e.error?.message || 'La position n’a pas pu être enregistrée.'),
     });
   }
 

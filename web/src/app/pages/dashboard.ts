@@ -293,7 +293,10 @@ export class DashboardPage implements OnInit, OnDestroy {
     const day = new Date(forecast.date + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
     const peak = forecast.hours.find((hour) => hour.hour === forecast.peakHour);
     const busiest = peak ? `, avec un pic vers ${peak.hour} h (${percent(peak.expectedOccupancyRate)} des tables occupées)` : '';
-    return `${day.charAt(0).toUpperCase() + day.slice(1)} : environ ${forecast.expectedSeatings} tablées attendues${busiest}.`;
+    const weather = forecast.weather
+      ? ` Météo : ${forecast.weather.rainy ? 'pluie' : 'sec'}, ${Math.round(forecast.weather.maxTemperature)} °C au plus chaud.`
+      : '';
+    return `${day.charAt(0).toUpperCase() + day.slice(1)} : environ ${forecast.expectedSeatings} tablées attendues${busiest}.${weather}`;
   }
 
   /** Sur quoi repose la prévision, pour qu'on sache quel crédit lui donner. */
@@ -301,7 +304,12 @@ export class DashboardPage implements OnInit, OnDestroy {
     if (!forecast.basedOnDays) return 'Estimation';
     const days = `${forecast.basedOnDays} ${forecast.basedOnDays > 1 ? 'jours' : 'jour'} d’historique`;
     const same = forecast.sameWeekdayDays ? `, dont ${forecast.sameWeekdayDays} même jour de la semaine` : '';
-    return `Estimation sur ${days}${same}. Sans météo ni réservations.`;
+    const weather = forecast.weather
+      ? forecast.similarWeatherDays
+        ? ` Les ${forecast.similarWeatherDays} jours à la météo semblable comptent double.`
+        : ' Aucun jour passé à la météo semblable.'
+      : ' Sans météo : position du restaurant à saisir dans Réglages.';
+    return `Estimation sur ${days}${same}.${weather} Sans réservations.`;
   }
 
   /** D'où vient le texte, pour que le gérant sache ce qu'il lit. */

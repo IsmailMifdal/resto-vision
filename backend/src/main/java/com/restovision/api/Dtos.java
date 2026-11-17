@@ -72,7 +72,21 @@ public final class Dtos {
 
     /** Affluence attendue un jour à venir. `basedOnDays` : jours d'historique utilisés, dont `sameWeekdayDays` du même jour de la semaine. */
     public record ForecastDto(LocalDate date, int basedOnDays, int sameWeekdayDays, List<ForecastHourDto> hours,
-                              Integer peakHour, int expectedSeatings) {}
+                              Integer peakHour, int expectedSeatings, WeatherDto weather, int similarWeatherDays) {}
+
+    /** Météo attendue le jour visé ; null quand la position du restaurant n'est pas connue ou la météo indisponible. */
+    public record WeatherDto(double maxTemperature, double precipitation, boolean rainy) {
+        public static WeatherDto of(com.restovision.forecast.DayWeather weather) {
+            return weather == null ? null
+                    : new WeatherDto(weather.maxTemperature(), weather.precipitation(), weather.rainy());
+        }
+    }
+
+    /** Réglages du restaurant visibles par l'application. */
+    public record RestaurantDto(String code, String name, Double latitude, Double longitude) {}
+
+    public record LocationUpdate(@jakarta.validation.constraints.DecimalMin("-90") @jakarta.validation.constraints.DecimalMax("90") Double latitude,
+                                 @jakarta.validation.constraints.DecimalMin("-180") @jakarta.validation.constraints.DecimalMax("180") Double longitude) {}
 
     /** État d'un boîtier. `fps` : images analysées par seconde sur la dernière demi-minute. */
     public record BoxDto(String boxId, String source, String version, Double fps, int buffered, long uptimeSeconds,

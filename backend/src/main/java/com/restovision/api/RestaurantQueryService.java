@@ -1,5 +1,7 @@
 package com.restovision.api;
 
+import com.restovision.api.Dtos.LocationUpdate;
+import com.restovision.api.Dtos.RestaurantDto;
 import com.restovision.api.Dtos.ForecastDto;
 import com.restovision.forecast.ForecastService;
 import com.restovision.api.Dtos.ReportDto;
@@ -114,6 +116,23 @@ public class RestaurantQueryService {
     @Transactional
     public ReportDto dailyReport(String restaurantCode, LocalDate date, boolean regenerate) {
         return dailyReports.report(restaurant(restaurantCode), date, regenerate);
+    }
+
+    @Transactional(readOnly = true)
+    public RestaurantDto restaurantSettings(String restaurantCode) {
+        Restaurant r = restaurant(restaurantCode);
+        return new RestaurantDto(r.getCode(), r.getName(), r.getLatitude(), r.getLongitude());
+    }
+
+    /** Position du restaurant : les deux coordonnées ou aucune. */
+    @Transactional
+    public RestaurantDto updateLocation(String restaurantCode, LocationUpdate update) {
+        if ((update.latitude() == null) != (update.longitude() == null)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Indiquez la latitude et la longitude, ou aucune des deux.");
+        }
+        Restaurant r = restaurant(restaurantCode);
+        r.setLocation(update.latitude(), update.longitude());
+        return new RestaurantDto(r.getCode(), r.getName(), r.getLatitude(), r.getLongitude());
     }
 
     @Transactional(readOnly = true)

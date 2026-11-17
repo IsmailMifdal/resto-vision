@@ -145,6 +145,17 @@ export interface Forecast {
   hours: { hour: number; expectedSeatings: number; expectedOccupancyRate: number }[];
   peakHour: number | null;
   expectedSeatings: number;
+  /** Météo attendue ; null sans position du restaurant ou si la météo est indisponible. */
+  weather: { maxTemperature: number; precipitation: number; rainy: boolean } | null;
+  /** Jours d'historique dont la météo ressemblait, comptés double. */
+  similarWeatherDays: number;
+}
+
+export interface RestaurantSettings {
+  code: string;
+  name: string;
+  latitude: number | null;
+  longitude: number | null;
 }
 
 /** Le rapport d'une journée, en phrases. */

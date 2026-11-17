@@ -113,8 +113,13 @@ l'affluence des caméras, et il faut de vraies données pour relier les deux.
 ## Prévision d'affluence
 
 L'écran « Service » affiche l'affluence attendue le lendemain, heure par heure. C'est la moyenne des 28 derniers
-jours, où le même jour de la semaine compte trois fois plus. Elle ne tient compte ni de la météo ni des
-réservations, et l'écran indique sur combien de jours elle repose.
+jours, où le même jour de la semaine compte trois fois plus. L'écran indique sur combien de jours elle repose.
+
+Météo : si la position du restaurant est saisie dans Réglages, les jours passés dont la météo ressemble à celle
+du lendemain (pluie ou non, à 5 °C près) comptent deux fois plus. Aucun coefficient n'est inventé : ce sont les
+journées du restaurant qui disent comment il réagit au temps. La météo vient d'Open-Meteo (gratuit, sans clé) ;
+seules les coordonnées lui sont envoyées. Sans position, ou si Open-Meteo ne répond pas, la prévision se fait
+sur l'historique seul. Les réservations ne sont pas prises en compte.
 
 ## Avec une vraie vidéo
 
