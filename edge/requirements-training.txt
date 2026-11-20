@@ -1,0 +1,6 @@
+# Poste de travail seulement (jamais sur les boîtiers) : étiquetage automatique et entraînement.
+# pip install -r requirements.txt -r requirements-training.txt
+# Toutes ces briques sont sous licence Apache 2.0, poids compris.
+rfdetr[train,loggers]>=1.12
+transformers>=4.56   # Grounding DINO (IDEA-Research/grounding-dino-tiny) et SAM 2 (facebook/sam2.1-hiera-tiny)
+pillow>=10

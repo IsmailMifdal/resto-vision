@@ -5,7 +5,12 @@ __pycache__/
 .pytest_cache/
 # Modèles et vidéos : jamais dans Git (poids, et images de vraies personnes)
 *.pt
+*.pth
+*.ckpt
 *.onnx
+# Jeux d'images et entraînements : images du restaurant, qui restent sur le poste
+edge/dataset*/
+edge/runs/
 *.mp4
 *.avi
 edge/config/edge.json

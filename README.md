@@ -102,8 +102,9 @@ il compte ceux qui restent et envoie un événement `PLATE_RETURN`. L'écran « 
 qui ont laissé de la nourriture, comparée aux 7 jours précédents, et les tables concernées.
 
 Limite : le modèle de base reconnaît des aliments (pizza, sandwich, gâteau, fruits, brocoli, carotte), pas les
-assiettes. Un plat qu'il ne sait pas nommer n'est pas compté. Un modèle entraîné sur les assiettes du restaurant
-pilote remplacera la liste `labels.food` de `edge.json`.
+assiettes. Un plat qu'il ne sait pas nommer n'est pas compté. Le modèle entraîné sur les images du pilote
+(« Entraîner sur les images du pilote ») reconnaît `plate_full`, `plate_partial` et `plate_empty` ; ses classes
+remplacent la liste `labels.food` de `edge.json`.
 
 ## Mise à jour à distance des boîtiers
 
@@ -236,8 +237,47 @@ Réglages de `edge.json` à connaître :
   compter (un serveur qui passe est ignoré), la vaisselle 30 % du temps.
 - Dessiner chaque zone de table **avec ses chaises** : une personne compte si le centre de sa boîte est dans la zone.
 
-Limite connue : le modèle YOLO de base ne connaît pas la classe « assiette ». Il repère verres, bols,
-couverts et bouteilles. Il faudra l'entraîner sur des images du restaurant pilote.
+### Entraîner sur les images du pilote
+
+Le modèle COCO ne connaît pas les assiettes ni leur remplissage. Le paquet `edge/restovision_training` prépare un
+modèle propre au restaurant, sur un poste de travail (il ne part jamais sur les boîtiers) :
+
+```bash
+cd edge
+pip install -r requirements.txt -r requirements-training.txt
+
+# 1. Étiquetage automatique d'enregistrements de la salle (une image toutes les 2 s)
+python -m restovision_training.autolabel --config config/edge.json --video salle.mp4 --every 2 --out dataset
+
+# 2. Relire les étiquettes (dataset/apercu/ montre chaque image annotée), corriger dans un outil COCO
+#    (CVAT, Label Studio, Roboflow) les erreurs, puis :
+
+# 3. Entraîner, de préférence sur une carte graphique (sur un processeur seul, compter des heures)
+python -m restovision_training.train --dataset dataset --size nano --epochs 40 --out runs/pilote
+```
+
+Comment l'étiquetage automatique fonctionne :
+
+- **RF-DETR** (COCO) donne les personnes, chaises, tables, verres, tasses ;
+- **Grounding DINO** (détection à partir d'un texte) trouve les assiettes (« plate ») et les panneaux « sol
+  mouillé » ; puis, dans chaque assiette recadrée et agrandie, la nourriture (« food. soup. pasta. salad… ») ;
+- **SAM 2** découpe le contour exact de l'assiette et de la nourriture ; la part de l'assiette couverte donne la
+  classe : `plate_full` (plus de 45 %), `plate_partial`, `plate_empty` (moins de 10 %) ;
+- **anonymisation** : le haut de chaque personne est flouté dans les images du jeu, qui ne contient donc aucun
+  visage. Ces images restent sur le poste du prestataire et sont à effacer à la fin du pilote.
+
+Les images sont réparties 80 / 10 / 10 entre `train`, `valid` et `test`, toujours de la même façon pour un même
+nom. Les étiquettes automatiques sont un point de départ : **il faut les relire** avant d'entraîner. À la fin,
+`train` écrit `runs/pilote/edge-model.json` : le bloc `model` (avec `weights` vers `checkpoint_best_total.pth`)
+et les groupes `labels` à recopier dans `edge.json`. Le modèle est ensuite livré aux boîtiers avec la mise à jour
+à distance.
+
+Le panneau « sol mouillé » est seulement étiqueté pour l'instant : l'alerte correspondante attend la validation
+du pilote.
+
+Vérifié sur la vidéo d'exemple : 8 images étiquetées (45 personnes, 15 assiettes dont 13 pleines), une époque
+d'entraînement sur processeur, puis le boîtier charge le modèle et rend les classes `plate_*`. Un vrai modèle
+demande quelques centaines d'images relues du restaurant.
 
 ## Tests
 
