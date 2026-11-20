@@ -26,10 +26,13 @@ class EdgeConfig:
     box_id: str = "boitier"
     # Clé publique de l'éditeur (Ed25519, base64). Absente : pas de mise à jour à distance.
     update_public_key: str | None = None
-    weights: str = "yolo11n.pt"
+    # Moteur de détection : "rfdetr" (Apache 2.0, par défaut) ou "yolo" (AGPL-3.0, pour comparer).
+    backend: str = "rfdetr"
+    model_size: str = "nano"   # RF-DETR : nano, small ou medium
+    weights: str | None = None   # modèle entraîné sur le restaurant ; vide = poids COCO officiels
     confidence: float = 0.35
     fps: float = 5.0
-    imgsz: int = 1280  # taille d'analyse : 640 est rapide mais rate la vaisselle vue de loin
+    imgsz: int = 1280  # YOLO seulement : 640 est rapide mais rate la vaisselle vue de loin
     extra: dict = field(default_factory=dict)
 
     @property
@@ -59,7 +62,10 @@ def load_config(path: str | Path) -> EdgeConfig:
         mqtt_password=mqtt.get("password") or os.environ.get("RESTOVISION_MQTT_PASSWORD"),
         mqtt_tls=bool(mqtt.get("tls", False)),
         update_public_key=(raw.get("update") or {}).get("publicKey"),
-        weights=model.get("weights", "yolo11n.pt"),
+        # Une configuration plus ancienne sans moteur mais avec des poids YOLO reste sur YOLO.
+        backend=model.get("backend") or ("yolo" if str(model.get("weights", "")).lower().startswith("yolo") else "rfdetr"),
+        model_size=model.get("size", "nano"),
+        weights=model.get("weights"),
         confidence=model.get("confidence", 0.35),
         fps=model.get("fps", 5.0),
         imgsz=model.get("imgsz", 1280),

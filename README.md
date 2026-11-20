@@ -211,10 +211,25 @@ Options utiles avec une vidéo ou une caméra :
 | `--realtime --loop` | Rejoue un fichier à vitesse réelle et sans fin, comme une caméra (démonstration) |
 | `--calibrate 20` | Salle dressée et vide : mesure 20 s la vaisselle de chaque table et affiche les `baselineDishes` à recopier |
 
+### Modèle de détection
+
+Le boîtier utilise **RF-DETR** (Roboflow) pré-entraîné sur COCO, avec le suivi **ByteTrack** de la bibliothèque
+`trackers`. Les deux sont sous licence Apache 2.0, poids compris : ils peuvent être vendus dans un abonnement.
+Dans `edge.json` : `"model": { "backend": "rfdetr", "size": "nano" }` (`small` ou `medium` : plus précis, plus
+lent). `"weights": "chemin/checkpoint.pth"` charge un modèle entraîné sur les images du restaurant (voir
+« Entraîner sur les images du pilote »).
+
+`"backend": "yolo"` garde YOLO d'Ultralytics pour comparer. Attention : sa licence AGPL-3.0 couvre aussi les
+modèles entraînés avec, et un produit commercial demande une licence Enterprise d'Ultralytics.
+
+Mesuré sur 3 images de la vidéo de salle (processeur de portable, sans carte graphique) : RF-DETR Nano trouve
+24 personnes et 7 objets de vaisselle en 0,4 s par image ; YOLO11n en 1280 px, 15 personnes et 10 objets en
+0,4 s ; YOLO11n en 640 px, 12 personnes et 1 objet en 0,1 s.
+
 Réglages de `edge.json` à connaître :
 
-- `model.imgsz` (1280 par défaut) : taille d'analyse. En 640 l'analyse est 3 fois plus rapide mais la vaisselle
-  vue de loin n'est presque plus détectée.
+- `model.imgsz` (YOLO seulement, 1280 par défaut) : taille d'analyse. En 640 l'analyse est 3 fois plus rapide
+  mais la vaisselle vue de loin n'est presque plus détectée.
 - `zones[].baselineDishes` : vaisselle d'une table dressée et libre (verres, couverts). Elle n'est pas comptée,
   sinon une table dressée passerait « à débarrasser ».
 - `stableSeconds` : durée de la fenêtre de lissage. Une personne doit être vue la moitié de ce temps pour

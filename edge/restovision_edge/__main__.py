@@ -88,7 +88,7 @@ def main() -> None:
                 if args.speed > 0:
                     time.sleep(1.0 / args.speed)
         else:
-            from .detector import YoloDetector, frames
+            from .detector import frames, make_detector
 
             if args.preview or args.preview_port:
                 from .preview import LiveView, VideoFile, draw
@@ -98,10 +98,9 @@ def main() -> None:
                 if args.preview_port:
                     views.append(LiveView(args.preview_port))
                     print(f"Aperçu en direct : http://127.0.0.1:{args.preview_port}", flush=True)
-            labels = set().union(*config.groups.values())
-            detector = YoloDetector(config.weights, config.confidence, labels, config.imgsz)
+            detector = make_detector(config)
             for frame, now in frames(args.source, config.fps, realtime=args.realtime, loop=args.loop):
-                detections = detector.detect(frame)
+                detections = detector.detect(frame, now)
                 announce_layout()
                 for event in pipeline.process(detections, now):
                     publisher.publish(event)
@@ -128,17 +127,17 @@ def main() -> None:
 def calibrate(config, source: str, seconds: float) -> None:
     """Mesure la vaisselle visible sur chaque table quand la salle est dressée et vide."""
     from .analyzers.tables import DISH_SHARE
-    from .detector import YoloDetector, frames
+    from .detector import frames, make_detector
     from .smoothing import Window
     from .zones import count_by_group, detections_in_zone
 
     tables = [z for z in config.zones if z.type == "TABLE"]
     windows = {z.id: Window(seconds) for z in tables}
-    detector = YoloDetector(config.weights, config.confidence, set().union(*config.groups.values()), config.imgsz)
+    detector = make_detector(config)
     start = now = None
     for frame, now in frames(source, config.fps):
         start = now if start is None else start
-        detections = detector.detect(frame)
+        detections = detector.detect(frame, now)
         for zone in tables:
             windows[zone.id].add(now, count_by_group(detections_in_zone(zone, detections), config.groups).get("dish", 0))
         if now - start >= seconds:

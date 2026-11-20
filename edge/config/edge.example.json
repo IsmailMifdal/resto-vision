@@ -1,7 +1,7 @@
 {
   "restaurantId": "demo",
   "mqtt": { "host": "localhost", "port": 1883, "topicPrefix": "restovision" },
-  "model": { "weights": "yolo11n.pt", "confidence": 0.35, "fps": 5, "imgsz": 1280 },
+  "model": { "backend": "rfdetr", "size": "nano", "confidence": 0.35, "fps": 5 },
   "labels": {
     "person": ["person"],
     "dish": ["cup", "bowl", "wine glass", "bottle", "fork", "knife", "spoon", "pizza", "sandwich", "cake"],
