@@ -5,7 +5,8 @@
 const RAILWAY_BACKEND = 'backend-production-589082fd.up.railway.app';
 
 const dev = location.port === '4200';
-const railway = location.hostname.endsWith('.up.railway.app');
+// Frontend hébergé à part (Railway ou Vercel) : le backend est sur Railway.
+const railway = ['.up.railway.app', '.vercel.app'].some((suffix) => location.hostname.endsWith(suffix));
 const socket = location.protocol === 'https:' ? 'wss:' : 'ws:';
 
 export const API_URL = dev ? 'http://localhost:8080/api' : railway ? `https://${RAILWAY_BACKEND}/api` : '/api';
