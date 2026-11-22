@@ -28,14 +28,15 @@ def keygen(out: Path) -> str:
     out = confined(out)
     out.mkdir(parents=True, exist_ok=True)
     private = Ed25519PrivateKey.generate()
-    key_file = out / "restovision-edge.key"
+    key_file = confined(out / "restovision-edge.key")
+    public_file = confined(out / "restovision-edge.pub")
     if key_file.exists():
         raise SystemExit(f"{key_file} existe déjà : refus de l'écraser.")
     key_file.write_bytes(private.private_bytes(serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8,
                                                serialization.NoEncryption()))
     public = base64.b64encode(private.public_key().public_bytes(serialization.Encoding.Raw,
                                                                  serialization.PublicFormat.Raw)).decode()
-    (out / "restovision-edge.pub").write_text(public + "\n", encoding="utf-8")
+    public_file.write_text(public + "\n", encoding="utf-8")
     return public
 
 
