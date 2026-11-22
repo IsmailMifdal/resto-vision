@@ -25,11 +25,13 @@ def call(path, token=None, body=None):
 def main():
     token = call("/auth/login", body=LOGIN)["token"]
     expected_zones, expected_alerts = {"T1", "T2", "Q1"}, {"UNSERVED", "TO_CLEAR"}
-    zones, alerts, states = set(), set(), set()
+    zones, alerts, states, plans = set(), set(), set(), set()
     deadline = time.time() + 170
     while time.time() < deadline and not (expected_zones <= zones and expected_alerts <= alerts):
         for zone in call("/zones", token):
             zones.add(zone["code"])
+            if zone["polygon"]:
+                plans.add(zone["code"])
             if zone["state"]:
                 states.add(zone["state"])
         for alert in call("/alerts", token):
@@ -37,11 +39,13 @@ def main():
                 print("alerte :", alert["message"], flush=True)
             alerts.add(alert["type"])
         time.sleep(2)
+    boxes = call("/boxes", token)
+    print("boîtiers :", [(b["boxId"], b["source"], b["online"]) for b in boxes])
     stats = call("/stats/today", token)
     print("zones :", sorted(zones), "| états vus :", sorted(states), "| alertes vues :", sorted(alerts))
     print("stats :", stats)
-    missing = (expected_zones - zones) | (expected_alerts - alerts)
-    if missing or stats["tablesTotal"] != 2:
+    missing = (expected_zones - zones) | (expected_alerts - alerts) | (expected_zones - plans)
+    if missing or stats["tablesTotal"] != 8 or not any(b["online"] for b in boxes):
         sys.exit(f"ÉCHEC, manquant : {sorted(missing)}")
     print("OK : la chaîne simulateur -> MQTT -> backend -> API fonctionne")
 

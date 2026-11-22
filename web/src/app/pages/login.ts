@@ -6,23 +6,34 @@ import { SessionService } from '../core/session.service';
 @Component({
   selector: 'app-login',
   template: `
-    <form class="card login" (submit)="submit($event)">
-      <h1>RestoVision</h1>
-      <label>Email
-        <input type="email" autocomplete="username" [value]="email()" (input)="email.set(value($event))" required>
-      </label>
-      <label>Mot de passe
-        <input type="password" autocomplete="current-password" [value]="password()" (input)="password.set(value($event))" required>
-      </label>
-      @if (error()) { <p class="error">{{ error() }}</p> }
-      <button class="primary" type="submit" [disabled]="loading()">Se connecter</button>
-      <p class="muted">Compte de démonstration : demo&#64;restovision.local / demo1234</p>
-    </form>
+    <div class="stage">
+      <form class="card login" (submit)="submit($event)">
+        <div class="brand">
+          <svg viewBox="0 0 28 28" width="32" height="32" aria-hidden="true">
+            <path d="M3 9V5a2 2 0 0 1 2-2h4M19 3h4a2 2 0 0 1 2 2v4M25 19v4a2 2 0 0 1-2 2h-4M9 25H5a2 2 0 0 1-2-2v-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <circle cx="14" cy="14" r="5" fill="var(--free)"/>
+          </svg>
+          <h1>RestoVision</h1>
+        </div>
+        <p class="muted">La salle en direct, vue par vos caméras.</p>
+        <label>Email
+          <input type="email" autocomplete="username" [value]="email()" (input)="email.set(value($event))" required>
+        </label>
+        <label>Mot de passe
+          <input type="password" autocomplete="current-password" [value]="password()" (input)="password.set(value($event))" required>
+        </label>
+        @if (error()) { <p class="error" role="alert">{{ error() }}</p> }
+        <button class="primary" type="submit" [disabled]="loading()">Se connecter</button>
+        <p class="faint small">Compte de démonstration : demo&#64;restovision.local / demo1234</p>
+      </form>
+    </div>
   `,
   styles: `
-    .login { max-width: 360px; margin: 12vh auto 0; display: grid; gap: 0.9rem; }
-    label { display: grid; gap: 0.3rem; font-size: 0.9rem; }
-    p { margin: 0; font-size: 0.85rem; }
+    .stage { min-height: 100vh; display: grid; place-items: center; padding: 16px; }
+    .login { width: 100%; max-width: 380px; display: grid; gap: 14px; padding: 28px; }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    label { display: grid; gap: 8px; font-weight: 500; }
+    button { height: 40px; margin-top: 4px; }
   `,
 })
 export class LoginPage {

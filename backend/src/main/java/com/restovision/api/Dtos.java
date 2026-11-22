@@ -1,5 +1,9 @@
 package com.restovision.api;
 
+import com.restovision.edge.EdgeBox;
+import com.restovision.report.DailyReport;
+import java.time.LocalDate;
+import java.util.List;
 import com.restovision.domain.Alert;
 import com.restovision.domain.AlertRule;
 import com.restovision.domain.AlertType;
@@ -17,10 +21,12 @@ public final class Dtos {
     private Dtos() {}
 
     public record ZoneDto(String code, ZoneType type, TableState state, Instant stateSince,
-                          int persons, int dishes, Integer estimatedWaitSeconds) {
+                          int persons, int dishes, Integer estimatedWaitSeconds, List<List<Double>> polygon,
+                          Boolean blocked, Integer obstacles) {
         public static ZoneDto of(Zone z) {
             return new ZoneDto(z.getCode(), z.getType(), z.getState(), z.getStateSince(),
-                    z.getPersons(), z.getDishes(), z.getEstimatedWaitSeconds());
+                    z.getPersons(), z.getDishes(), z.getEstimatedWaitSeconds(), z.getPolygon(),
+                    z.getType() == ZoneType.EXIT ? z.isBlocked() : null, z.getObstacles());
         }
     }
 
@@ -42,6 +48,78 @@ public final class Dtos {
 
     public record StatsDto(int tablesTotal, int tablesOccupied, int tablesToClear, double occupancyRate,
                            Integer averageWaitSeconds, int seatingsToday, int queuePersons, int queueWaitSeconds) {}
+
+    /** Un état tenu par une table, de `start` à `end`. Les périodes « libre » ne sont pas listées. */
+    public record SegmentDto(TableState state, Instant start, Instant end) {}
+
+    public record TableTimelineDto(String code, List<SegmentDto> segments) {}
+
+    /** Une heure de service. `hour` est l'heure locale du restaurant (12 = de 12 h à 13 h). */
+    public record HourDto(int hour, double occupancyRate, Integer averageWaitSeconds, int seatings) {}
+
+    /** Une journée de service. `from` est minuit, heure du restaurant ; `to` s'arrête à maintenant pour aujourd'hui. */
+    public record DayDto(LocalDate date, Instant from, Instant to, int tablesTotal, List<TableTimelineDto> tables,
+                         List<HourDto> hours, Integer averageWaitSeconds, Integer longestWaitSeconds,
+                         String longestWaitTable, Instant longestWaitAt, int seatings,
+                         Integer averageToClearSeconds, double peakOccupancyRate) {}
+
+    public record DaySummaryDto(LocalDate date, Integer averageWaitSeconds, Integer longestWaitSeconds, int seatings,
+                                double peakOccupancyRate, Integer averageToClearSeconds) {}
+
+    /** Le rapport d'une journée. `partial` : journée en cours. `aiAvailable` : une clé d'API est configurée. */
+    public record ReportDto(LocalDate date, String text, DailyReport.Source source, Instant generatedAt,
+                            boolean partial, boolean aiAvailable) {}
+
+    /** Le rapport et ce qu'on peut en faire depuis l'écran. */
+    public record ReportViewDto(ReportDto report, boolean mailAvailable) {}
+
+    public record ForecastHourDto(int hour, double expectedSeatings, double expectedOccupancyRate) {}
+
+    /** Affluence attendue un jour à venir. `basedOnDays` : jours d'historique utilisés, dont `sameWeekdayDays` du même jour de la semaine. */
+    public record ForecastDto(LocalDate date, int basedOnDays, int sameWeekdayDays, List<ForecastHourDto> hours,
+                              Integer peakHour, int expectedSeatings, WeatherDto weather, int similarWeatherDays) {}
+
+    /** Météo attendue le jour visé ; null quand la position du restaurant n'est pas connue ou la météo indisponible. */
+    public record WeatherDto(double maxTemperature, double precipitation, boolean rainy) {
+        public static WeatherDto of(com.restovision.forecast.DayWeather weather) {
+            return weather == null ? null
+                    : new WeatherDto(weather.maxTemperature(), weather.precipitation(), weather.rainy());
+        }
+    }
+
+    /** Réglages du restaurant visibles par l'application. */
+    public record RestaurantDto(String code, String name, Double latitude, Double longitude) {}
+
+    public record LocationUpdate(@jakarta.validation.constraints.DecimalMin("-90") @jakarta.validation.constraints.DecimalMax("90") Double latitude,
+                                 @jakarta.validation.constraints.DecimalMin("-180") @jakarta.validation.constraints.DecimalMax("180") Double longitude) {}
+
+    /** État d'un boîtier. `fps` : images analysées par seconde sur la dernière demi-minute. */
+    /** `latestVersion` : dernière version publiée pour les boîtiers ; `updateError` : dernier échec de mise à jour. */
+    public record BoxDto(String boxId, String source, String version, Double fps, int buffered, long uptimeSeconds,
+                         Instant lastSeen, boolean online, String latestVersion, String updateError) {
+        public static BoxDto of(EdgeBox box, String latestVersion) {
+            return new BoxDto(box.getBoxId(), box.getSource(), box.getVersion(), box.getFps(), box.getBuffered(),
+                    box.getUptimeSeconds(), box.getLastSeen(), box.isOnline(), latestVersion, box.getUpdateError());
+        }
+    }
+
+    /** Une table quittée avec de la nourriture encore visible. */
+    public record PlateReturnDto(String table, Instant at, int servedFood, int leftFood) {}
+
+    /**
+     * Retours en cuisine d'une journée. `meals` : repas observés (tables quittées après service) ;
+     * `leftoverShare` : part de ces repas qui ont laissé de la nourriture, en pour cent, null sans repas observé.
+     */
+    public record WasteDayDto(LocalDate date, Instant from, int meals, int withLeftovers, Integer leftoverShare,
+                              Integer previousWeekShare, List<PlateReturnDto> leftovers) {}
+
+    /** Un restaurant du groupe sur la période. Durées en secondes ; null quand rien n'a été mesuré. */
+    public record SiteDto(String code, String name, boolean mine, int seatings, Integer averageWaitSeconds,
+                          Integer longestWaitSeconds, Integer averageToClearSeconds, double peakOccupancyRate,
+                          Integer leftoverShare, int boxesOnline, int boxesTotal) {}
+
+    /** Comparaison des restaurants d'un groupe, du jour `from` au jour `to` inclus (journées terminées). */
+    public record GroupDto(String groupCode, int days, LocalDate from, LocalDate to, List<SiteDto> sites) {}
 
     public record LoginRequest(@NotBlank @Email String email, @NotBlank String password) {}
 

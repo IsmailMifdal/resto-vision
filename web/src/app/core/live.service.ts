@@ -2,7 +2,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import { Client } from '@stomp/stompjs';
 import { ApiService } from './api.service';
 import { WS_URL } from './config';
-import { Alert, Zone, upsertAlert, upsertZone } from './models';
+import { Alert, Box, Zone, upsertAlert, upsertZone } from './models';
 import { SessionService } from './session.service';
 
 /** État en direct du restaurant : chargé une fois par l'API, puis tenu à jour par WebSocket. */
@@ -15,6 +15,8 @@ export class LiveService {
 
   readonly zones = signal<Zone[]>([]);
   readonly alerts = signal<Alert[]>([]);
+  /** null tant que la liste n'est pas chargée. */
+  readonly boxes = signal<Box[] | null>(null);
   readonly connected = signal(false);
   readonly error = signal<string | null>(null);
   /** Horloge qui avance chaque seconde, pour afficher les durées. */
@@ -29,6 +31,7 @@ export class LiveService {
     const base = `/topic/restaurants/${session.restaurantCode}`;
     this.client = new Client({
       brokerURL: WS_URL,
+      connectHeaders: { Authorization: `Bearer ${session.token}` },
       reconnectDelay: 3000,
       onConnect: () => {
         this.connected.set(true);
@@ -36,6 +39,11 @@ export class LiveService {
         this.client?.subscribe(`${base}/zones`, (message) =>
           this.zones.update((zones) => upsertZone(zones, JSON.parse(message.body) as Zone)),
         );
+        this.client?.subscribe(`${base}/boxes`, (message) => {
+          const box = JSON.parse(message.body) as Box;
+          this.boxes.update((boxes) => [...(boxes ?? []).filter((b) => b.boxId !== box.boxId), box]
+            .sort((a, b) => a.boxId.localeCompare(b.boxId)));
+        });
         this.client?.subscribe(`${base}/alerts`, (message) =>
           this.alerts.update((alerts) => upsertAlert(alerts, JSON.parse(message.body) as Alert)),
         );
@@ -53,6 +61,7 @@ export class LiveService {
     this.connected.set(false);
     this.zones.set([]);
     this.alerts.set([]);
+    this.boxes.set(null);
   }
 
   acknowledge(alert: Alert): void {
@@ -71,5 +80,6 @@ export class LiveService {
       error: () => this.error.set('Backend injoignable. Vérifie qu’il tourne sur le port 8080.'),
     });
     this.api.alerts().subscribe({ next: (alerts) => this.alerts.set(alerts), error: () => undefined });
+    this.api.boxes().subscribe({ next: (boxes) => this.boxes.set(boxes), error: () => undefined });
   }
 }

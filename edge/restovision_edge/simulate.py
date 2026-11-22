@@ -23,8 +23,12 @@ def scenario(config: EdgeConfig, cycle_seconds: float = 240.0, step: float = 1.0
     cycles = 0 : sans fin. Renvoie (détections, secondes écoulées)."""
     tables = [z for z in config.zones if z.type == "TABLE"]
     queues = [z for z in config.zones if z.type == "QUEUE"]
+    exits = [z for z in config.zones if z.type == "EXIT"]
+    obstacle = "chair" if "chair" in config.groups.get("obstacle", set()) else None
     person = sorted(config.groups["person"])[0]
     dish = sorted(config.groups.get("dish", {"cup"}))[0]
+    food = sorted(config.groups.get("food", set()))
+    meal = "pizza" if "pizza" in food else (food[0] if food else None)
     t = 0.0
     while cycles == 0 or t < cycle_seconds * cycles:
         detections: list[Detection] = []
@@ -35,6 +39,17 @@ def scenario(config: EdgeConfig, cycle_seconds: float = 240.0, step: float = 1.0
                 detections += [_box(person, cx - 30, cy), _box(person, cx + 30, cy)]
             if 0.40 <= phase < 0.90:  # vaisselle sur la table
                 detections.append(_box(dish, cx, cy + 30, 8))
+            if meal and 0.40 <= phase < 0.90:
+                # Deux plats servis ; une fois sur trois, un plat revient à moitié plein.
+                cycle = int((t + i * cycle_seconds / max(1, len(tables))) // cycle_seconds)
+                left = 1 if (cycle + i) % 3 == 0 else 0
+                served = 2 if phase < 0.70 else left
+                detections += [_box(meal, cx - 20 + 40 * k, cy - 30, 10) for k in range(served)]
+        for zone in exits:
+            # Un cycle sur trois, une chaise reste devant la sortie pendant 40 % du cycle.
+            if int(t // cycle_seconds) % 3 == 1 and 0.2 <= (t % cycle_seconds) / cycle_seconds < 0.6 and obstacle:
+                cx, cy = _center(zone)
+                detections.append(_box(obstacle, cx, cy, 15))
         for zone in queues:
             cx, cy = _center(zone)
             count = int(4 * abs(((t / cycle_seconds) * 2) % 2 - 1) + 0.5)

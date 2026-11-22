@@ -1,10 +1,13 @@
+import pytest
+
 from restovision_edge.analyzers.queue import QueueAnalyzer
 from restovision_edge.analyzers.tables import TableAnalyzer, classify
 from restovision_edge.config import load_config
 from restovision_edge.models import Detection, Event, TableState, Zone
-from restovision_edge.pipeline import Pipeline
+from restovision_edge.pipeline import Pipeline, layout_event
 from restovision_edge.publisher import MqttPublisher
 from restovision_edge.simulate import scenario
+from restovision_edge.smoothing import Window
 from restovision_edge.zones import point_in_polygon
 
 SQUARE = ((0, 0), (100, 0), (100, 100), (0, 100))
@@ -68,6 +71,57 @@ def test_person_outside_zone_is_ignored():
     assert table.process([person(500, 500)], 1) == []
 
 
+def test_window_level_ignores_what_is_seen_too_briefly():
+    window = Window(10)
+    for now, value in [(0, 0), (2, 3), (4, 0), (10, 0)]:  # 3 personnes pendant 2 s sur 10
+        window.add(now, value)
+    assert window.level(10, 0.5) == 0
+    assert window.level(10, 0.2) == 3
+
+
+def test_table_stays_served_when_dishes_are_missed_on_most_frames():
+    table = TableAnalyzer("demo", ZONE, GROUPS, stable_seconds=5)
+    states = []
+    for tenth in range(0, 600):  # 60 s à 10 images/s, le verre n'est vu que 4 images sur 10
+        now = tenth / 10
+        detections = [person()] + ([cup()] if tenth % 10 < 4 else [])
+        states += [e.data["state"] for e in table.process(detections, now)]
+    assert states[-1] == "SERVED"
+    assert states.count("SERVED") == 1  # pas d'aller-retour entre « servie » et « en attente »
+
+
+def test_set_table_is_not_to_clear():
+    """Une table dressée (2 verres posés d'avance) est libre, pas à débarrasser."""
+    zone = Zone("T1", "TABLE", SQUARE, baseline_dishes=2)
+    table = TableAnalyzer("demo", zone, GROUPS, stable_seconds=5)
+    glasses = [cup(30, 60), cup(70, 60)]
+    seen = []
+    timeline = [(0, glasses), (10, glasses), (20, glasses + [person()]), (30, glasses + [person()]),
+                (40, glasses + [person(), cup(50, 40)]), (50, glasses + [person(), cup(50, 40)])]
+    for now, detections in timeline:
+        seen += [e.data["state"] for e in table.process(detections, now)]
+    assert seen == ["WAITING", "SERVED"]
+
+
+def test_config_reads_baseline_and_image_size(tmp_path):
+    path = tmp_path / "edge.json"
+    path.write_text('{"restaurantId": "r", "model": {"imgsz": 960}, "zones": '
+                    '[{"id": "T1", "type": "TABLE", "baselineDishes": 3, "polygon": [[0, 0], [1, 0], [1, 1]]}]}')
+    config = load_config(path)
+    assert config.imgsz == 960 and config.zones[0].baseline_dishes == 3
+
+
+def test_preview_draws_zones_on_a_copy():
+    np = pytest.importorskip("numpy")
+    pytest.importorskip("cv2")
+    from restovision_edge.preview import draw
+
+    config = load_config("config/edge.example.json")
+    frame = np.zeros((720, 1280, 3), dtype=np.uint8)
+    image = draw(frame, [person(200, 400)], Pipeline(config).analyzers)
+    assert image.shape == frame.shape and image.any() and not frame.any()
+
+
 def test_queue_count_and_wait():
     queue = QueueAnalyzer("demo", Zone("Q1", "QUEUE", SQUARE), GROUPS, seconds_per_customer=90, stable_seconds=5)
     people = [person(50, 20), person(50, 50), person(50, 80)]
@@ -102,12 +156,14 @@ class FakeClient:
     def __init__(self):
         self.connected = False
         self.sent = []
+        self.retained = []
 
     def is_connected(self):
         return self.connected
 
-    def publish(self, topic, payload, qos=0):
+    def publish(self, topic, payload, qos=0, retain=False):
         self.sent.append((topic, payload))
+        self.retained.append(retain)
         return type("Info", (), {"rc": 0})()
 
     def loop_stop(self):
@@ -127,3 +183,141 @@ def test_mqtt_buffers_while_offline_then_flushes_in_order():
     publisher.flush()
     assert len(client.sent) == 2 and not publisher.buffer
     assert '"persons": 1' in client.sent[0][1] and '"persons": 2' in client.sent[1][1]
+
+
+def test_layout_event_describes_every_zone_without_any_image():
+    config = load_config("config/edge.example.json")
+    message = layout_event(config, 0.0).to_json()
+    assert message["type"] == "LAYOUT" and message["restaurantId"] == "demo"
+    assert [z["id"] for z in message["zones"]] == [z.id for z in config.zones]
+    assert message["zones"][0] == {"id": "Q1", "type": "QUEUE", "polygon": [[60, 90], [250, 90], [250, 630], [60, 630]]}
+    assert set(message) == {"type", "restaurantId", "zoneId", "timestamp", "zones"}
+
+
+def test_layout_is_retained_on_its_own_topic():
+    client = FakeClient()
+    client.connected = True
+    publisher = MqttPublisher("h", 1, "restovision/demo/events", client=client)
+    publisher.publish(Event("QUEUE", "demo", "Q1", 1.0, {"persons": 1}))
+    publisher.publish_layout(layout_event(load_config("config/edge.example.json"), 2.0))
+    assert [topic for topic, _ in client.sent] == ["restovision/demo/events", "restovision/demo/layout"]
+    assert client.retained == [False, True]
+
+
+def test_heartbeat_reports_rate_and_waits_for_its_period():
+    from restovision_edge.health import Heartbeat
+
+    clock = [1000.0]
+    beat = Heartbeat("demo", "salle-1", "caméra", period=30, clock=lambda: clock[0])
+    first = beat.due()
+    assert first.type == "HEARTBEAT" and first.data["boxId"] == "salle-1"   # le premier part tout de suite
+    for _ in range(150):
+        beat.frame()
+    clock[0] += 10
+    assert beat.due() is None
+    clock[0] += 20
+    event = beat.due(buffered=3)
+    assert event.data["fps"] == 5.0 and event.data["uptimeSeconds"] == 30 and event.data["buffered"] == 3
+    assert event.data["updateError"] is None
+
+
+def test_source_is_described_without_its_address():
+    from restovision_edge.health import describe_source
+
+    assert describe_source("rtsp://admin:secret@192.168.1.20/flux") == "caméra"
+    assert describe_source("simulate") == "simulateur"
+    assert describe_source("samples/salle.mp4") == "vidéo"
+
+
+def test_plate_return_counts_food_left_when_clients_leave():
+    from restovision_edge.analyzers.plate_waste import PlateWasteAnalyzer
+
+    groups = {"person": {"person"}, "dish": {"cup"}}
+    table = TableAnalyzer("demo", ZONE, groups, stable_seconds=5)
+    waste = PlateWasteAnalyzer(table, {"pizza"})
+
+    def pizza(x):
+        return Detection("pizza", x - 3, 57, x + 3, 63)
+
+    timeline = ([(t, [person(), cup()]) for t in range(0, 20)]                        # attente
+                + [(t, [person(), cup(), pizza(30), pizza(70)]) for t in range(20, 50)]  # deux plats servis
+                + [(t, [person(), cup(), pizza(30)]) for t in range(50, 60)]           # un plat terminé
+                + [(t, [cup(), pizza(30)]) for t in range(60, 80)])                    # départ, un plat reste
+    events = []
+    for now, detections in timeline:
+        table.process(detections, now)
+        events += waste.process(detections, now)
+    (event,) = events
+    assert event.type == "PLATE_RETURN" and event.zone_id == "T1"
+    assert event.data == {"servedFood": 2, "leftFood": 1}
+
+
+def test_plates_cleared_with_the_clients_do_not_count_as_leftovers():
+    from restovision_edge.analyzers.plate_waste import PlateWasteAnalyzer
+
+    table = TableAnalyzer("demo", ZONE, {"person": {"person"}, "dish": {"cup"}}, stable_seconds=5)
+    waste = PlateWasteAnalyzer(table, {"pizza"})
+    plate = Detection("pizza", 47, 57, 53, 63)
+    events = []
+    for now, detections in ([(t, [person(), cup(), plate]) for t in range(0, 40)]
+                            + [(t, [cup()]) for t in range(40, 60)]):   # assiette finie, clients partis
+        table.process(detections, now)
+        events += waste.process(detections, now)
+    (event,) = events
+    assert event.data == {"servedFood": 1, "leftFood": 0}
+
+
+def test_no_plate_return_when_no_food_was_ever_seen():
+    from restovision_edge.analyzers.plate_waste import PlateWasteAnalyzer
+
+    table = TableAnalyzer("demo", ZONE, GROUPS, stable_seconds=5)
+    waste = PlateWasteAnalyzer(table, {"pizza"})
+    events = []
+    for now, detections in [(t, [person(), cup()]) for t in range(0, 40)] + [(t, [cup()]) for t in range(40, 60)]:
+        table.process(detections, now)
+        events += waste.process(detections, now)
+    assert events == []
+
+
+def test_simulator_sends_plate_returns_with_leftovers():
+    config = load_config("config/edge.example.json")
+    pipeline = Pipeline(config)
+    returns = [e for detections, elapsed in scenario(config, cycles=3)
+               for e in pipeline.process(detections, 1000.0 + elapsed) if e.type == "PLATE_RETURN"]
+    assert returns and all(e.data["servedFood"] == 2 for e in returns)
+    assert {e.data["leftFood"] for e in returns} == {0, 1}
+
+
+def test_exit_is_blocked_by_objects_but_never_by_people():
+    from restovision_edge.analyzers.exit import ExitAnalyzer
+
+    exit_zone = Zone("S1", "EXIT", SQUARE)
+    analyzer = ExitAnalyzer("demo", exit_zone, {"chair", "suitcase"}, window_seconds=10)
+    chair = Detection("chair", 40, 40, 60, 60)
+    events = []
+    timeline = ([(t, [person()]) for t in range(0, 30)]                      # des gens passent : rien
+                + [(t, [chair] if t % 10 else []) for t in range(30, 60)]     # une chaise posée, ratée 1 image sur 10
+                + [(t, [person()]) for t in range(60, 80)])                   # la chaise est enlevée
+    for now, detections in timeline:
+        events += analyzer.process(detections, now)
+    assert [(e.data["blocked"], e.data["obstacles"]) for e in events] == [(True, 1), (False, 0)]
+    assert events[0].type == "EXIT" and events[0].zone_id == "S1"
+
+
+def test_an_object_carried_past_the_exit_does_not_block_it():
+    from restovision_edge.analyzers.exit import ExitAnalyzer
+
+    analyzer = ExitAnalyzer("demo", Zone("S1", "EXIT", SQUARE), {"suitcase"}, window_seconds=10)
+    case = Detection("suitcase", 40, 40, 60, 60)
+    events = []
+    for now in range(0, 40):
+        events += analyzer.process([case] if 15 <= now < 20 else [], now)   # 5 s de passage
+    assert events == []
+
+
+def test_simulator_blocks_the_exit_now_and_then():
+    config = load_config("config/edge.example.json")
+    pipeline = Pipeline(config)
+    exits = [e.data["blocked"] for detections, elapsed in scenario(config, cycles=3)
+             for e in pipeline.process(detections, 1000.0 + elapsed) if e.type == "EXIT"]
+    assert exits == [True, False]

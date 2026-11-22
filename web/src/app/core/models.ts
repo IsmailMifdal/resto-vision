@@ -1,6 +1,6 @@
 export type TableState = 'EMPTY' | 'WAITING' | 'SERVED' | 'TO_CLEAR';
-export type ZoneType = 'TABLE' | 'QUEUE';
-export type AlertType = 'UNSERVED' | 'TO_CLEAR' | 'QUEUE_LENGTH';
+export type ZoneType = 'TABLE' | 'QUEUE' | 'EXIT';
+export type AlertType = 'UNSERVED' | 'TO_CLEAR' | 'QUEUE_LENGTH' | 'EXIT_BLOCKED';
 
 export interface Zone {
   code: string;
@@ -10,6 +10,11 @@ export interface Zone {
   persons: number;
   dishes: number;
   estimatedWaitSeconds: number | null;
+  /** Contour de la zone dans l'image de la caméra, ou null tant que le boîtier ne l'a pas envoyé. */
+  polygon: [number, number][] | null;
+  /** Sortie de secours : encombrée ou non ; null pour les autres zones. */
+  blocked: boolean | null;
+  obstacles: number | null;
 }
 
 export interface Alert {
@@ -40,6 +45,191 @@ export interface Stats {
   queueWaitSeconds: number;
 }
 
+/** Un état tenu par une table. Les périodes « libre » ne sont pas listées. */
+export interface Segment {
+  state: TableState;
+  start: string;
+  end: string;
+}
+
+export interface HourStats {
+  /** Heure du restaurant : 12 = de 12 h à 13 h. */
+  hour: number;
+  occupancyRate: number;
+  averageWaitSeconds: number | null;
+  seatings: number;
+}
+
+/** Une journée de service. `from` est minuit, heure du restaurant. */
+export interface Day {
+  date: string;
+  from: string;
+  to: string;
+  tablesTotal: number;
+  tables: { code: string; segments: Segment[] }[];
+  hours: HourStats[];
+  averageWaitSeconds: number | null;
+  longestWaitSeconds: number | null;
+  longestWaitTable: string | null;
+  longestWaitAt: string | null;
+  seatings: number;
+  averageToClearSeconds: number | null;
+  peakOccupancyRate: number;
+}
+
+export interface DaySummary {
+  date: string;
+  averageWaitSeconds: number | null;
+  longestWaitSeconds: number | null;
+  seatings: number;
+  peakOccupancyRate: number;
+  averageToClearSeconds: number | null;
+}
+
+export interface Ingredient {
+  id: string;
+  name: string;
+  unit: string;
+  quantity: number;
+  /** Sous ce seuil, l'ingrédient est à commander. */
+  threshold: number;
+  low: boolean;
+  updatedAt: string;
+  supplier: string | null;
+}
+
+export interface Dish {
+  id: string;
+  name: string;
+  lines: { ingredientId: string; ingredient: string; unit: string; quantity: number }[];
+}
+
+export interface Stock {
+  ingredients: Ingredient[];
+  dishes: Dish[];
+  lastImport: { fileName: string; importedAt: string; lines: number } | null;
+}
+
+/** Proposition de commande fournisseur. */
+export interface Order {
+  /** Nombre de jours que la commande doit permettre de tenir. */
+  coverDays: number;
+  /** Jours de ventes importées utilisés pour estimer la consommation. */
+  salesDays: number;
+  lines: {
+    ingredient: string;
+    unit: string;
+    supplier: string | null;
+    quantity: number;
+    /** null : aucune vente connue pour cet ingrédient. */
+    dailyUse: number | null;
+    daysLeft: number | null;
+    toOrder: number;
+  }[];
+}
+
+/** Bilan d'un import de ventes de la caisse. */
+export interface ImportResult {
+  fileName: string;
+  lines: number;
+  dishesSold: number;
+  usage: { ingredient: string; unit: string; used: number; remaining: number; low: boolean }[];
+  /** Plats vendus sans recette : ils n'ont rien retiré du stock. */
+  unknownDishes: { name: string; quantity: number }[];
+  problems: { line: number; message: string }[];
+}
+
+/** Affluence attendue un jour à venir, à partir de l'historique. */
+export interface Forecast {
+  date: string;
+  /** Jours d'historique utilisés, dont `sameWeekdayDays` du même jour de la semaine. */
+  basedOnDays: number;
+  sameWeekdayDays: number;
+  hours: { hour: number; expectedSeatings: number; expectedOccupancyRate: number }[];
+  peakHour: number | null;
+  expectedSeatings: number;
+  /** Météo attendue ; null sans position du restaurant ou si la météo est indisponible. */
+  weather: { maxTemperature: number; precipitation: number; rainy: boolean } | null;
+  /** Jours d'historique dont la météo ressemblait, comptés double. */
+  similarWeatherDays: number;
+}
+
+export interface RestaurantSettings {
+  code: string;
+  name: string;
+  latitude: number | null;
+  longitude: number | null;
+}
+
+/** Le rapport d'une journée, en phrases. */
+export interface Report {
+  date: string;
+  text: string;
+  /** AI : rédigé par un modèle de langage. TEMPLATE : phrases toutes faites. */
+  source: 'AI' | 'TEMPLATE';
+  generatedAt: string;
+  /** Journée en cours : les chiffres bougent encore. */
+  partial: boolean;
+  /** Une clé d'API est configurée côté serveur. */
+  aiAvailable: boolean;
+}
+
+/** Ce qui est revenu en cuisine un jour donné. */
+export interface WasteDay {
+  date: string;
+  from: string;
+  /** Repas observés : tables quittées après avoir été servies. */
+  meals: number;
+  withLeftovers: number;
+  /** Part des repas qui ont laissé de la nourriture, en %, null sans repas observé. */
+  leftoverShare: number | null;
+  previousWeekShare: number | null;
+  leftovers: { table: string; at: string; servedFood: number; leftFood: number }[];
+}
+
+/** Un boîtier d'analyse et son dernier signal de vie. */
+export interface Box {
+  boxId: string;
+  /** « caméra », « vidéo » ou « simulateur ». */
+  source: string | null;
+  version: string | null;
+  /** Images analysées par seconde. */
+  fps: number | null;
+  /** Messages en attente d'envoi sur le boîtier (réseau coupé). */
+  buffered: number;
+  uptimeSeconds: number;
+  lastSeen: string;
+  online: boolean;
+  /** Dernière version publiée pour les boîtiers, ou null si aucune. */
+  latestVersion: string | null;
+  /** Dernier échec de mise à jour (« signature invalide »…), ou null. */
+  updateError: string | null;
+}
+
+/** Un restaurant du groupe sur la période. Durées en secondes, null quand rien n'a été mesuré. */
+export interface Site {
+  code: string;
+  name: string;
+  /** Le restaurant de la personne connectée. */
+  mine: boolean;
+  seatings: number;
+  averageWaitSeconds: number | null;
+  longestWaitSeconds: number | null;
+  averageToClearSeconds: number | null;
+  peakOccupancyRate: number;
+  leftoverShare: number | null;
+  boxesOnline: number;
+  boxesTotal: number;
+}
+
+export interface Group {
+  groupCode: string;
+  days: number;
+  from: string;
+  to: string;
+  sites: Site[];
+}
+
 export interface Session {
   token: string;
   restaurantCode: string;
@@ -58,6 +248,7 @@ export const RULE_LABELS: Record<AlertType, { label: string; unit: string }> = {
   UNSERVED: { label: 'Clients non servis', unit: 'secondes' },
   TO_CLEAR: { label: 'Table à débarrasser', unit: 'secondes' },
   QUEUE_LENGTH: { label: 'File d’attente', unit: 'personnes' },
+  EXIT_BLOCKED: { label: 'Sortie de secours encombrée', unit: 'secondes' },
 };
 
 /** Remplace ou ajoute une zone, liste triée par code. */
@@ -78,4 +269,18 @@ export function formatDuration(seconds: number): string {
   const minutes = Math.floor(seconds / 60);
   if (minutes < 60) return `${minutes} min`;
   return `${Math.floor(minutes / 60)} h ${String(minutes % 60).padStart(2, '0')}`;
+}
+
+/** Durée d'un indicateur : « 6 min 20 », ou un tiret quand il n'y a rien à mesurer. */
+export function formatWait(seconds: number | null): string {
+  if (seconds === null) return '–';
+  if (seconds < 60) return `${seconds} s`;
+  const rest = seconds % 60;
+  return rest ? `${Math.floor(seconds / 60)} min ${String(rest).padStart(2, '0')}` : `${seconds / 60} min`;
+}
+
+/** Heure du restaurant (« 12:52 ») d'un instant, à partir du minuit de la journée renvoyé par le serveur. */
+export function clockTime(dayStart: string, instant: string): string {
+  const minutes = Math.floor((Date.parse(instant) - Date.parse(dayStart)) / 60000);
+  return `${String(Math.floor(minutes / 60) % 24).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
 }

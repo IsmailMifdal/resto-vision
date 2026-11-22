@@ -25,6 +25,10 @@ public class Restaurant {
     /** V3 multi-sites : les restaurants d'une même chaîne partagent ce code. */
     private String groupCode;
 
+    /** Position du restaurant, pour la météo. Nulle tant que le gérant ne l'a pas saisie. */
+    private Double latitude;
+    private Double longitude;
+
     protected Restaurant() {}
 
     public Restaurant(String code, String name) {
@@ -37,4 +41,15 @@ public class Restaurant {
     public String getName() { return name; }
     public String getGroupCode() { return groupCode; }
     public void setGroupCode(String groupCode) { this.groupCode = groupCode; }
+    public Double getLatitude() { return latitude; }
+    public Double getLongitude() { return longitude; }
+
+    public void setLocation(Double latitude, Double longitude) {
+        this.latitude = latitude;
+        this.longitude = longitude;
+    }
+
+    public boolean hasLocation() {
+        return latitude != null && longitude != null;
+    }
 }

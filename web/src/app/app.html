@@ -1,14 +1,72 @@
 @if (sessions.session(); as session) {
-  <header>
-    <strong>{{ session.restaurantName }}</strong>
-    <nav>
-      <a routerLink="/salle" routerLinkActive="active">Salle</a>
-      <a routerLink="/gerant" routerLinkActive="active">Gérant</a>
-      <a routerLink="/a-venir" routerLinkActive="active">À venir</a>
-    </nav>
-    <button (click)="logout()">Déconnexion</button>
-  </header>
+  <div class="shell">
+    <aside class="sidebar">
+      <a class="brand" routerLink="/salle" aria-label="RestoVision, retour à la salle">
+        <svg viewBox="0 0 28 28" width="28" height="28" aria-hidden="true">
+          <path d="M3 9V5a2 2 0 0 1 2-2h4M19 3h4a2 2 0 0 1 2 2v4M25 19v4a2 2 0 0 1-2 2h-4M9 25H5a2 2 0 0 1-2-2v-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <circle cx="14" cy="14" r="5" fill="var(--free)"/>
+        </svg>
+        <span>RestoVision</span>
+      </a>
+      <nav aria-label="Écrans">
+        <a routerLink="/salle" routerLinkActive="active">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1.75" y="1.75" width="5" height="5" rx="1"/><rect x="9.25" y="1.75" width="5" height="5" rx="1"/><rect x="1.75" y="9.25" width="5" height="5" rx="1"/><rect x="9.25" y="9.25" width="5" height="5" rx="1"/></svg>
+          <span>Salle</span>
+          @if (openAlerts()) { <span class="count num" [attr.aria-label]="openAlerts() + ' alertes à traiter'">{{ openAlerts() }}</span> }
+        </a>
+        <a routerLink="/service" routerLinkActive="active">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 13.5h12M4 11V7M8 11V3.5M12 11V8.5"/></svg>
+          <span>Service</span>
+        </a>
+        @if (session.role === 'ADMIN') {
+          <a routerLink="/groupe" routerLinkActive="active">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1.75" y="6.5" width="3.5" height="7.5" rx="0.75"/><rect x="6.25" y="2" width="3.5" height="12" rx="0.75"/><rect x="10.75" y="4.5" width="3.5" height="9.5" rx="0.75"/></svg>
+            <span>Groupe</span>
+          </a>
+        }
+        <a routerLink="/stock" routerLinkActive="active">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 5 8 2l6 3v6l-6 3-6-3zM2 5l6 3 6-3M8 8v6"/></svg>
+          <span>Stock</span>
+        </a>
+        <a routerLink="/zones" routerLinkActive="active">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 4.5 9.5 2.5l3.5 4-2 6.5-6.5.5z"/><circle cx="3" cy="4.5" r="1"/><circle cx="9.5" cy="2.5" r="1"/><circle cx="13" cy="6.5" r="1"/><circle cx="11" cy="13" r="1"/><circle cx="4.5" cy="13.5" r="1"/></svg>
+          <span>Zones</span>
+        </a>
+        <a routerLink="/reglages" routerLinkActive="active">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 4.5h7M12.5 4.5H14M2 11.5h1.5M7 11.5h7"/><circle cx="10.75" cy="4.5" r="1.75"/><circle cx="5.25" cy="11.5" r="1.75"/></svg>
+          <span>Réglages</span>
+        </a>
+        <a routerLink="/a-venir" routerLinkActive="active">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 14V2.5M3.5 3h8l-1.75 2.75L11.5 8.5h-8"/></svg>
+          <span>À venir</span>
+        </a>
+      </nav>
+    </aside>
+
+    <header class="topbar">
+      <div class="pulse" [class.off]="!live.connected()">
+        <span class="beacon" aria-hidden="true"></span>
+        <strong>{{ live.connected() ? 'En direct' : 'Hors ligne' }}</strong>
+        @if (silentBox(); as since) { <span class="fact silent"><span class="dot" data-state="ALERT"></span>Boîtier muet depuis {{ since }}</span> }
+        <span class="num clock">{{ clock() }}</span>
+        @if (summary(); as s) {
+          <span class="fact num"><span class="dot" data-state="SERVED"></span>{{ s.occupied }} / {{ s.tables }} tables occupées</span>
+          @if (s.waiting) { <span class="fact num"><span class="dot" data-state="WAITING"></span>{{ s.waiting }} en attente</span> }
+          @if (s.toClear) { <span class="fact num"><span class="dot" data-state="TO_CLEAR"></span>{{ s.toClear }} à débarrasser</span> }
+          @if (s.queue) { <span class="fact num">File : {{ s.queue }} pers.</span> }
+        }
+      </div>
+      <div class="account">
+        <div>
+          <strong>{{ session.restaurantName }}</strong>
+          <span class="faint small">{{ role(session.role) }}</span>
+        </div>
+        <button class="quiet" (click)="logout()">Déconnexion</button>
+      </div>
+    </header>
+
+    <main><router-outlet /></main>
+  </div>
+} @else {
+  <main class="bare"><router-outlet /></main>
 }
-<main>
-  <router-outlet />
-</main>

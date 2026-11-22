@@ -17,28 +17,8 @@ public class ComingSoonController {
                 .body(Map.of("feature", feature, "plannedFor", version));
     }
 
-    @GetMapping("/stock")
-    public ResponseEntity<Map<String, String>> stock() {
-        return planned("Stock synchronisé avec la caisse", "V2");
-    }
 
-    @GetMapping("/waste")
-    public ResponseEntity<Map<String, String>> waste() {
-        return planned("Anti-gaspillage", "V2");
-    }
 
-    @GetMapping("/forecast")
-    public ResponseEntity<Map<String, String>> forecast() {
-        return planned("Prédiction d'affluence et commande fournisseur", "V2");
-    }
 
-    @GetMapping("/reports/daily")
-    public ResponseEntity<Map<String, String>> dailyReport() {
-        return planned("Rapport quotidien généré par IA", "V2");
-    }
 
-    @GetMapping("/sites")
-    public ResponseEntity<Map<String, String>> sites() {
-        return planned("Comparaison multi-sites", "V3");
-    }
 }

@@ -48,7 +48,7 @@ public class StatsService {
                 } else if (zone.getState() == TableState.TO_CLEAR) {
                     toClear++;
                 }
-            } else {
+            } else if (zone.getType() == ZoneType.QUEUE) {
                 queuePersons += zone.getPersons();
                 queueWait = Math.max(queueWait, zone.getEstimatedWaitSeconds() == null ? 0 : zone.getEstimatedWaitSeconds());
             }

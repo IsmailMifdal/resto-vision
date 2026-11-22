@@ -1,16 +1,25 @@
 {
   "restaurantId": "demo",
   "mqtt": { "host": "localhost", "port": 1883, "topicPrefix": "restovision" },
-  "model": { "weights": "yolo11n.pt", "confidence": 0.35, "fps": 5 },
+  "model": { "backend": "rfdetr", "size": "nano", "confidence": 0.35, "fps": 5 },
   "labels": {
     "person": ["person"],
-    "dish": ["cup", "bowl", "wine glass", "bottle", "fork", "knife", "spoon", "pizza", "sandwich", "cake"]
+    "dish": ["cup", "bowl", "wine glass", "bottle", "fork", "knife", "spoon", "pizza", "sandwich", "cake"],
+    "food": ["banana", "apple", "sandwich", "orange", "broccoli", "carrot", "hot dog", "pizza", "donut", "cake"],
+    "obstacle": ["chair", "suitcase", "backpack", "handbag", "bench", "potted plant", "bicycle", "dining table"]
   },
   "stableSeconds": 5,
   "queue": { "secondsPerCustomer": 90 },
   "zones": [
-    { "id": "T1", "type": "TABLE", "polygon": [[100, 300], [400, 300], [400, 600], [100, 600]] },
-    { "id": "T2", "type": "TABLE", "polygon": [[500, 300], [800, 300], [800, 600], [500, 600]] },
-    { "id": "Q1", "type": "QUEUE", "polygon": [[900, 100], [1200, 100], [1200, 700], [900, 700]] }
+    { "id": "Q1", "type": "QUEUE", "polygon": [[60, 90], [250, 90], [250, 630], [60, 630]] },
+    { "id": "S1", "type": "EXIT", "polygon": [[60, 660], [250, 660], [250, 710], [60, 710]] },
+    { "id": "T1", "type": "TABLE", "baselineDishes": 0, "polygon": [[330, 90], [480, 90], [480, 280], [330, 280]] },
+    { "id": "T2", "type": "TABLE", "baselineDishes": 0, "polygon": [[520, 90], [670, 90], [670, 280], [520, 280]] },
+    { "id": "T3", "type": "TABLE", "baselineDishes": 0, "polygon": [[710, 90], [930, 90], [930, 280], [710, 280]] },
+    { "id": "T4", "type": "TABLE", "baselineDishes": 0, "polygon": [[970, 90], [1230, 90], [1230, 280], [970, 280]] },
+    { "id": "T5", "type": "TABLE", "baselineDishes": 0, "polygon": [[330, 440], [550, 440], [550, 630], [330, 630]] },
+    { "id": "T6", "type": "TABLE", "baselineDishes": 0, "polygon": [[590, 440], [740, 440], [740, 630], [590, 630]] },
+    { "id": "T7", "type": "TABLE", "baselineDishes": 0, "polygon": [[780, 440], [930, 440], [930, 630], [780, 630]] },
+    { "id": "T8", "type": "TABLE", "baselineDishes": 0, "polygon": [[970, 440], [1230, 440], [1230, 630], [970, 630]] }
   ]
 }

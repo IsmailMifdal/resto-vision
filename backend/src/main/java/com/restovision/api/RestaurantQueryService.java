@@ -1,5 +1,15 @@
 package com.restovision.api;
 
+import com.restovision.api.Dtos.LocationUpdate;
+import com.restovision.api.Dtos.RestaurantDto;
+import com.restovision.api.Dtos.ForecastDto;
+import com.restovision.forecast.ForecastService;
+import com.restovision.api.Dtos.ReportDto;
+import com.restovision.report.DailyReportService;
+import com.restovision.api.Dtos.DayDto;
+import com.restovision.api.Dtos.DaySummaryDto;
+import com.restovision.stats.HistoryService;
+import java.time.LocalDate;
 import com.restovision.api.Dtos.AlertDto;
 import com.restovision.api.Dtos.AlertRuleDto;
 import com.restovision.api.Dtos.AlertRuleUpdate;
@@ -31,15 +41,23 @@ public class RestaurantQueryService {
     private final AlertRuleRepository rules;
     private final StatsService stats;
     private final LiveNotifier notifier;
+    private final HistoryService history;
+    private final DailyReportService dailyReports;
+    private final ForecastService forecasts;
 
     public RestaurantQueryService(RestaurantRepository restaurants, ZoneRepository zones, AlertRepository alerts,
-                                  AlertRuleRepository rules, StatsService stats, LiveNotifier notifier) {
+                                  AlertRuleRepository rules, StatsService stats, LiveNotifier notifier,
+                                  HistoryService history, DailyReportService dailyReports,
+                                  ForecastService forecasts) {
         this.restaurants = restaurants;
         this.zones = zones;
         this.alerts = alerts;
         this.rules = rules;
         this.stats = stats;
         this.notifier = notifier;
+        this.history = history;
+        this.dailyReports = dailyReports;
+        this.forecasts = forecasts;
     }
 
     private Restaurant restaurant(String code) {
@@ -83,6 +101,43 @@ public class RestaurantQueryService {
         rule.setThreshold(update.threshold());
         rule.setEnabled(update.enabled());
         return AlertRuleDto.of(rule);
+    }
+
+    @Transactional(readOnly = true)
+    public DayDto day(String restaurantCode, LocalDate date) {
+        return history.day(restaurant(restaurantCode), date);
+    }
+
+    @Transactional(readOnly = true)
+    public List<DaySummaryDto> lastDays(String restaurantCode, int count) {
+        return history.lastDays(restaurant(restaurantCode), Math.max(1, Math.min(31, count)));
+    }
+
+    @Transactional
+    public ReportDto dailyReport(String restaurantCode, LocalDate date, boolean regenerate) {
+        return dailyReports.report(restaurant(restaurantCode), date, regenerate);
+    }
+
+    @Transactional(readOnly = true)
+    public RestaurantDto restaurantSettings(String restaurantCode) {
+        Restaurant r = restaurant(restaurantCode);
+        return new RestaurantDto(r.getCode(), r.getName(), r.getLatitude(), r.getLongitude());
+    }
+
+    /** Position du restaurant : les deux coordonnées ou aucune. */
+    @Transactional
+    public RestaurantDto updateLocation(String restaurantCode, LocationUpdate update) {
+        if ((update.latitude() == null) != (update.longitude() == null)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Indiquez la latitude et la longitude, ou aucune des deux.");
+        }
+        Restaurant r = restaurant(restaurantCode);
+        r.setLocation(update.latitude(), update.longitude());
+        return new RestaurantDto(r.getCode(), r.getName(), r.getLatitude(), r.getLongitude());
+    }
+
+    @Transactional(readOnly = true)
+    public ForecastDto forecast(String restaurantCode, LocalDate date) {
+        return forecasts.forecast(restaurant(restaurantCode), date);
     }
 
     @Transactional(readOnly = true)

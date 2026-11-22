@@ -13,4 +13,13 @@ public interface ZoneEventRepository extends JpaRepository<ZoneEvent, UUID> {
     @Query("select e from ZoneEvent e join fetch e.zone z "
             + "where z.restaurant = :restaurant and e.occurredAt >= :since order by e.occurredAt asc")
     List<ZoneEvent> findSince(@Param("restaurant") Restaurant restaurant, @Param("since") Instant since);
+
+    @Query("select e from ZoneEvent e join fetch e.zone z "
+            + "where z.restaurant = :restaurant and e.occurredAt >= :from and e.occurredAt < :to "
+            + "order by e.occurredAt asc")
+    List<ZoneEvent> findBetween(@Param("restaurant") Restaurant restaurant, @Param("from") Instant from,
+                                @Param("to") Instant to);
+
+    @Query("select count(e) from ZoneEvent e where e.zone.restaurant = :restaurant and e.occurredAt < :before")
+    long countBefore(@Param("restaurant") Restaurant restaurant, @Param("before") Instant before);
 }

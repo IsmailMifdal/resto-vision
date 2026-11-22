@@ -36,6 +36,7 @@ class Zone:
     id: str
     type: str  # "TABLE" ou "QUEUE"
     polygon: tuple[tuple[float, float], ...]
+    baseline_dishes: int = 0  # vaisselle d'une table dressée et libre, à ne pas compter
 
 
 @dataclass
