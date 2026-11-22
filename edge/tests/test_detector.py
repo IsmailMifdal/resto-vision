@@ -1,6 +1,7 @@
 """Le détecteur RF-DETR : filtrage des classes et suivi, avec un faux modèle (pas de téléchargement)."""
-import numpy as np
 import pytest
+
+np = pytest.importorskip("numpy")
 
 sv = pytest.importorskip("supervision")
 pytest.importorskip("trackers")

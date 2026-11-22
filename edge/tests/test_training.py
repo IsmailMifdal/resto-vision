@@ -1,8 +1,9 @@
 """Outils d'entraînement : la logique, sans télécharger de modèle."""
 import json
 
-import numpy as np
 import pytest
+
+np = pytest.importorskip("numpy")
 
 cv2 = pytest.importorskip("cv2")
 
