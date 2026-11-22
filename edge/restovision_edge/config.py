@@ -18,6 +18,8 @@ class EdgeConfig:
     mqtt_host: str = "localhost"
     mqtt_port: int = 1883
     topic_prefix: str = "restovision"
+    mqtt_username: str | None = None
+    mqtt_password: str | None = None
     weights: str = "yolo11n.pt"
     confidence: float = 0.35
     fps: float = 5.0
@@ -41,6 +43,8 @@ def load_config(path: str | Path) -> EdgeConfig:
         mqtt_host=mqtt.get("host", "localhost"),
         mqtt_port=mqtt.get("port", 1883),
         topic_prefix=mqtt.get("topicPrefix", "restovision"),
+        mqtt_username=mqtt.get("username"),
+        mqtt_password=mqtt.get("password"),
         weights=model.get("weights", "yolo11n.pt"),
         confidence=model.get("confidence", 0.35),
         fps=model.get("fps", 5.0),

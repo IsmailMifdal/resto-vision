@@ -22,7 +22,8 @@ def main() -> None:
 
     config = load_config(args.config)
     pipeline = Pipeline(config)
-    publisher = (MqttPublisher(config.mqtt_host, config.mqtt_port, config.topic)
+    publisher = (MqttPublisher(config.mqtt_host, config.mqtt_port, config.topic,
+                               username=config.mqtt_username, password=config.mqtt_password)
                  if args.publisher == "mqtt" else StdoutPublisher())
     try:
         if args.source == "simulate":
