@@ -24,15 +24,21 @@ public class MqttListener implements MqttCallback {
 
     private final String url;
     private final String topic;
+    private final String username;
+    private final String password;
     private final ObjectMapper mapper;
     private final EdgeEventService service;
     private MqttClient client;
 
     public MqttListener(@Value("${restovision.mqtt.url}") String url,
                         @Value("${restovision.mqtt.topic}") String topic,
+                        @Value("${restovision.mqtt.username:}") String username,
+                        @Value("${restovision.mqtt.password:}") String password,
                         ObjectMapper mapper, EdgeEventService service) {
         this.url = url;
         this.topic = topic;
+        this.username = username;
+        this.password = password;
         this.mapper = mapper;
         this.service = service;
     }
@@ -48,6 +54,10 @@ public class MqttListener implements MqttCallback {
                 MqttConnectOptions options = new MqttConnectOptions();
                 options.setCleanSession(true);
                 options.setConnectionTimeout(5);
+                if (!username.isBlank()) {
+                    options.setUserName(username);
+                    options.setPassword(password.toCharArray());
+                }
                 client.connect(options);
                 client.subscribe(topic, 1);
                 log.info("Connecté au broker MQTT {} (topic {})", url, topic);

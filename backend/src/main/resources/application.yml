@@ -18,6 +18,8 @@ restovision:
     enabled: ${MQTT_ENABLED:true}
     url: ${MQTT_URL:tcp://localhost:1883}
     topic: restovision/+/events
+    username: ${MQTT_USERNAME:}
+    password: ${MQTT_PASSWORD:}
   cors:
     allowed-origins: ${CORS_ORIGINS:http://localhost:4200}
   alerts:

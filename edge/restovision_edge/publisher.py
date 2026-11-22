@@ -25,13 +25,16 @@ class MqttPublisher:
     """Publie en QoS 1. Les événements non envoyés restent en mémoire (10 000 max)
     et repartent dès que la connexion revient."""
 
-    def __init__(self, host: str, port: int, topic: str, client=None, max_buffer: int = 10_000):
+    def __init__(self, host: str, port: int, topic: str, client=None, max_buffer: int = 10_000,
+                 username: str | None = None, password: str | None = None):
         self.topic = topic
         self.buffer: deque[str] = deque(maxlen=max_buffer)
         if client is None:
             import paho.mqtt.client as mqtt  # import tardif : inutile pour les tests
 
             client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
+            if username:
+                client.username_pw_set(username, password)
             client.on_connect = lambda *_: self.flush()
             client.connect_async(host, port)
             client.loop_start()
