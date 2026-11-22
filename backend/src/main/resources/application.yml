@@ -29,7 +29,7 @@ restovision:
   mqtt:
     enabled: ${MQTT_ENABLED:true}
     url: ${MQTT_URL:tcp://localhost:1883}
-    username: ${MQTT_USER:}       # vide en développement : le broker local accepte tout le monde
+    username: ${MQTT_USERNAME:${MQTT_USER:}}   # vide en développement : le broker local accepte tout le monde
     password: ${MQTT_PASSWORD:}
     topic: restovision/+/events
   cors:
