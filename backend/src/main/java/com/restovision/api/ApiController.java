@@ -1,5 +1,22 @@
 package com.restovision.api;
 
+import com.restovision.api.Dtos.GroupDto;
+import com.restovision.multisite.GroupComparisonService;
+import com.restovision.report.ReportMailer;
+import java.util.Map;
+import com.restovision.api.Dtos.LocationUpdate;
+import com.restovision.api.Dtos.RestaurantDto;
+import com.restovision.api.Dtos.WasteDayDto;
+import com.restovision.waste.WasteService;
+import com.restovision.api.Dtos.BoxDto;
+import com.restovision.edge.BoxService;
+import com.restovision.api.Dtos.ForecastDto;
+import com.restovision.api.Dtos.ReportDto;
+import com.restovision.api.Dtos.DayDto;
+import com.restovision.api.Dtos.DaySummaryDto;
+import java.time.LocalDate;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.web.bind.annotation.RequestParam;
 import com.restovision.api.Dtos.AlertDto;
 import com.restovision.api.Dtos.AlertRuleDto;
 import com.restovision.api.Dtos.AlertRuleUpdate;
@@ -27,8 +44,17 @@ import org.springframework.web.bind.annotation.RestController;
 public class ApiController {
     private final AuthService auth;
     private final RestaurantQueryService queries;
+    private final BoxService boxes;
+    private final WasteService waste;
+    private final ReportMailer mailer;
+    private final GroupComparisonService group;
 
-    public ApiController(AuthService auth, RestaurantQueryService queries) {
+    public ApiController(AuthService auth, RestaurantQueryService queries, BoxService boxes, WasteService waste,
+                         ReportMailer mailer, GroupComparisonService group) {
+        this.mailer = mailer;
+        this.group = group;
+        this.boxes = boxes;
+        this.waste = waste;
         this.auth = auth;
         this.queries = queries;
     }
@@ -66,6 +92,83 @@ public class ApiController {
     public AlertRuleDto updateRule(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id,
                                    @Valid @RequestBody AlertRuleUpdate update) {
         return queries.updateRule(restaurantOf(jwt), id, update);
+    }
+
+    /** Une journée de service table par table. Sans date : aujourd'hui. */
+    @GetMapping("/stats/day")
+    public DayDto day(@AuthenticationPrincipal Jwt jwt,
+                      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        return queries.day(restaurantOf(jwt), date);
+    }
+
+    /** Résumé des derniers jours, du plus ancien au plus récent. */
+    @GetMapping("/stats/days")
+    public List<DaySummaryDto> days(@AuthenticationPrincipal Jwt jwt, @RequestParam(defaultValue = "7") int count) {
+        return queries.lastDays(restaurantOf(jwt), count);
+    }
+
+    /** Le rapport du jour en phrases. Sans date : aujourd'hui. */
+    @GetMapping("/reports/daily")
+    public ReportDto dailyReport(@AuthenticationPrincipal Jwt jwt,
+                                 @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        return queries.dailyReport(restaurantOf(jwt), date, false);
+    }
+
+    /** Faire rédiger à nouveau le rapport d'un jour. Réservé au gérant. */
+    @PostMapping("/reports/daily")
+    public ReportDto rewriteDailyReport(@AuthenticationPrincipal Jwt jwt,
+                                        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        return queries.dailyReport(restaurantOf(jwt), date, true);
+    }
+
+    @GetMapping("/restaurant")
+    public RestaurantDto restaurant(@AuthenticationPrincipal Jwt jwt) {
+        return queries.restaurantSettings(restaurantOf(jwt));
+    }
+
+    /** Position du restaurant, pour la météo de la prévision. Réservé au gérant. */
+    @PutMapping("/restaurant/location")
+    public RestaurantDto updateLocation(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody LocationUpdate update) {
+        return queries.updateLocation(restaurantOf(jwt), update);
+    }
+
+    /** Affluence attendue heure par heure. Sans date : demain. */
+    @GetMapping("/forecast")
+    public ForecastDto forecast(@AuthenticationPrincipal Jwt jwt,
+                                @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        return queries.forecast(restaurantOf(jwt), date);
+    }
+
+    /** Ce qui est revenu en cuisine un jour donné. Sans date : aujourd'hui. */
+    @GetMapping("/waste")
+    public WasteDayDto waste(@AuthenticationPrincipal Jwt jwt,
+                             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        return waste.day(restaurantOf(jwt), date);
+    }
+
+    /** Les boîtiers du restaurant et leur dernier signal de vie. */
+    @GetMapping("/boxes")
+    public List<BoxDto> boxes(@AuthenticationPrincipal Jwt jwt) {
+        return boxes.list(restaurantOf(jwt));
+    }
+
+    /** Les restaurants du groupe côte à côte. Réservé au responsable de groupe (ADMIN). */
+    @GetMapping("/group")
+    public GroupDto group(@AuthenticationPrincipal Jwt jwt, @RequestParam(defaultValue = "7") int days) {
+        return group.compare(restaurantOf(jwt), days);
+    }
+
+    /** Les envois possibles depuis l'application. */
+    @GetMapping("/mail")
+    public Map<String, Boolean> mail() {
+        return Map.of("available", mailer.isConfigured());
+    }
+
+    /** Envoie par e-mail le rapport d'un jour terminé aux gérants. Réservé au gérant. */
+    @PostMapping("/reports/daily/send")
+    public Map<String, List<String>> sendDailyReport(@AuthenticationPrincipal Jwt jwt,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        return Map.of("sentTo", mailer.send(restaurantOf(jwt), date));
     }
 
     @GetMapping("/stats/today")

@@ -1,5 +1,8 @@
 package com.restovision.edge;
 
+import com.restovision.waste.PlateReturn;
+import com.restovision.waste.PlateReturnRepository;
+import java.util.List;
 import com.restovision.alert.AlertService;
 import com.restovision.api.Dtos.ZoneDto;
 import com.restovision.domain.Restaurant;
@@ -27,25 +30,43 @@ public class EdgeEventService {
     private final ZoneEventRepository events;
     private final AlertService alertService;
     private final LiveNotifier notifier;
+    private final BoxService boxes;
+    private final PlateReturnRepository plateReturns;
 
     public EdgeEventService(RestaurantRepository restaurants, ZoneRepository zones, ZoneEventRepository events,
-                            AlertService alertService, LiveNotifier notifier) {
+                            AlertService alertService, LiveNotifier notifier, BoxService boxes,
+                            PlateReturnRepository plateReturns) {
         this.restaurants = restaurants;
         this.zones = zones;
         this.events = events;
         this.alertService = alertService;
         this.notifier = notifier;
+        this.boxes = boxes;
+        this.plateReturns = plateReturns;
     }
 
     @Transactional
     public void handle(EdgeEvent event) {
+        if ("HEARTBEAT".equals(event.type())) {
+            boxes.heartbeat(event);
+            return;
+        }
+        if ("LAYOUT".equals(event.type())) {
+            handleLayout(event);
+            return;
+        }
         if (event.type() == null || event.restaurantId() == null || event.zoneId() == null) {
             log.warn("Événement incomplet ignoré : {}", event);
+            return;
+        }
+        if ("PLATE_RETURN".equals(event.type())) {
+            handlePlateReturn(event);
             return;
         }
         ZoneType type = switch (event.type()) {
             case "TABLE_STATE" -> ZoneType.TABLE;
             case "QUEUE" -> ZoneType.QUEUE;
+            case "EXIT" -> ZoneType.EXIT;
             default -> null;
         };
         if (type == null) {
@@ -77,15 +98,71 @@ public class EdgeEventService {
             zone.setState(state);
             zone.setStateSince(at);
             zone.setDishes(event.dishes() == null ? 0 : event.dishes());
+        } else if (type == ZoneType.EXIT) {
+            boolean blocked = Boolean.TRUE.equals(event.blocked());
+            if (blocked != zone.isBlocked() || zone.getStateSince() == null) {
+                zone.setStateSince(at);   // depuis quand la sortie est encombrée (ou dégagée)
+            }
+            zone.setExit(blocked, event.obstacles() == null ? 0 : event.obstacles());
         } else {
             zone.setEstimatedWaitSeconds(event.estimatedWaitSeconds());
         }
         zone.setPersons(event.persons() == null ? 0 : event.persons());
         zone.setUpdatedAt(now);
 
-        events.save(new ZoneEvent(zone, zone.getState(), previous, zone.getPersons(), zone.getDishes(), at));
+        if (type != ZoneType.EXIT) {
+            events.save(new ZoneEvent(zone, zone.getState(), previous, zone.getPersons(), zone.getDishes(), at));
+        }
         notifier.zone(restaurant.getCode(), ZoneDto.of(zone));
         alertService.evaluateZone(zone, now);
+    }
+
+    /** Une table vient d'être quittée : on garde ce qui restait sur la table. */
+    private void handlePlateReturn(EdgeEvent event) {
+        Restaurant restaurant = restaurants.findByCode(event.restaurantId()).orElse(null);
+        Zone zone = restaurant == null ? null : zones.findByRestaurantAndCode(restaurant, event.zoneId()).orElse(null);
+        if (zone == null || zone.getType() != ZoneType.TABLE || event.servedFood() == null || event.leftFood() == null
+                || event.servedFood() <= 0) {
+            log.warn("Retour d'assiettes ignoré : {} {}", event.restaurantId(), event.zoneId());
+            return;
+        }
+        Instant now = Instant.now();
+        Instant at = event.timestamp() == null || event.timestamp().isAfter(now) ? now : event.timestamp();
+        plateReturns.save(new PlateReturn(zone, at, event.servedFood(), event.leftFood()));
+    }
+
+    /** Le boîtier annonce le contour de ses zones : on le garde pour dessiner le plan de salle. */
+    private void handleLayout(EdgeEvent event) {
+        Restaurant restaurant = event.restaurantId() == null ? null
+                : restaurants.findByCode(event.restaurantId()).orElse(null);
+        if (restaurant == null || event.zones() == null) {
+            log.warn("Plan ignoré, restaurant inconnu ou plan vide : {}", event.restaurantId());
+            return;
+        }
+        for (EdgeEvent.ZoneLayout layout : event.zones()) {
+            ZoneType type = "TABLE".equals(layout.type()) ? ZoneType.TABLE
+                    : "QUEUE".equals(layout.type()) ? ZoneType.QUEUE
+                    : "EXIT".equals(layout.type()) ? ZoneType.EXIT : null;
+            List<List<Double>> polygon = layout.polygon();
+            boolean valid = layout.id() != null && type != null && polygon != null
+                    && polygon.size() >= 3 && polygon.size() <= 100
+                    && polygon.stream().allMatch(point -> point != null && point.size() == 2
+                            && point.get(0) != null && point.get(1) != null);
+            if (!valid) {
+                log.warn("Zone invalide ignorée dans le plan de {} : {}", restaurant.getCode(), layout.id());
+                continue;
+            }
+            Zone zone = zones.findByRestaurantAndCode(restaurant, layout.id())
+                    .orElseGet(() -> zones.save(new Zone(restaurant, layout.id(), type)));
+            if (zone.getType() != type) {
+                log.warn("La zone {} n'est pas de type {}", zone.getCode(), type);
+                continue;
+            }
+            if (!polygon.equals(zone.getPolygon())) {
+                zone.setPolygon(polygon);
+                notifier.zone(restaurant.getCode(), ZoneDto.of(zone));
+            }
+        }
     }
 
     private static TableState parseState(String value) {

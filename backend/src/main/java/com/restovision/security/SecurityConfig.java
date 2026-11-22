@@ -38,6 +38,12 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**", "/ws/**", "/actuator/health", "/error").permitAll()
                         .requestMatchers(HttpMethod.PUT, "/api/alert-rules/**").hasAnyRole("MANAGER", "ADMIN")
+                        .requestMatchers("/api/group/**", "/api/group").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/restaurant/**").hasAnyRole("MANAGER", "ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/reports/**").hasAnyRole("MANAGER", "ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/stock/**").hasAnyRole("MANAGER", "ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/stock/**").hasAnyRole("MANAGER", "ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/stock/**").hasAnyRole("MANAGER", "ADMIN")
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(oauth -> oauth.jwt(Customizer.withDefaults()));
         return http.build();

@@ -8,7 +8,19 @@ spring:
   jpa:
     open-in-view: false
     hibernate:
-      ddl-auto: update   # pratique au début ; à remplacer par Flyway avant la production
+      ddl-auto: validate   # le schéma vient des migrations Flyway (db/migration), Hibernate le vérifie seulement
+  flyway:
+    baseline-on-migrate: true   # une base créée avant Flyway est reprise telle quelle
+    baseline-version: 0
+
+server:
+  error:
+    include-message: always   # les refus sont rédigés pour l'utilisateur (« Ce fichier a déjà été importé »)
+
+management:
+  health:
+    mail:
+      enabled: false   # l'envoi d'e-mails est facultatif : son absence ne rend pas le service malade
 
 restovision:
   timezone: Europe/Paris
@@ -17,12 +29,23 @@ restovision:
   mqtt:
     enabled: ${MQTT_ENABLED:true}
     url: ${MQTT_URL:tcp://localhost:1883}
-    topic: restovision/+/events
-    username: ${MQTT_USERNAME:}
+    username: ${MQTT_USERNAME:${MQTT_USER:}}   # vide en développement : le broker local accepte tout le monde
     password: ${MQTT_PASSWORD:}
+    topic: restovision/+/events
   cors:
     allowed-origins: ${CORS_ORIGINS:http://localhost:4200}
+  mail:
+    # Le serveur d'envoi se règle avec SPRING_MAIL_HOST / SPRING_MAIL_PORT / SPRING_MAIL_USERNAME / SPRING_MAIL_PASSWORD.
+    # Sans SPRING_MAIL_HOST, aucun e-mail ne part.
+    from: ${MAIL_FROM:RestoVision <rapport@restovision.local>}
+    report-cron: ${MAIL_REPORT_CRON:0 0 8 * * *}   # chaque matin à 8 h, le rapport de la veille
+  report:
+    anthropic-api-key: ${ANTHROPIC_API_KEY:}   # vide : le rapport est rédigé sans IA
+    model: ${REPORT_MODEL:claude-opus-5-5}
+  boxes:
+    offline-after-seconds: 90   # sans signal de vie pendant ce temps, un boîtier est hors ligne
   alerts:
     check-interval-ms: 5000
   demo:
     enabled: ${DEMO_DATA:true}   # crée le restaurant "demo" et un compte de test
+    history: ${DEMO_HISTORY:true}   # ajoute une semaine de services fictifs au restaurant "demo"

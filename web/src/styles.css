@@ -1,46 +1,121 @@
+@import '@fontsource-variable/inter/index.css';
+
+/* RestoVision : noir chaud, un seul gris par niveau, et la couleur réservée aux quatre états d'une table. */
 :root {
-  --bg: #f5f4f0;
-  --surface: #ffffff;
-  --text: #1f2328;
-  --muted: #6b7280;
-  --border: #e3e1da;
-  --accent: #1f6f5c;
-  --empty: #e8f3ec;
-  --empty-ink: #1f6f43;
-  --waiting: #fdf0d2;
-  --waiting-ink: #8a5a00;
-  --served: #e4eefb;
-  --served-ink: #1d4f91;
-  --clear: #fbe4e1;
-  --clear-ink: #a3261a;
+  --ground: #0e0d0c;
+  --surface: #181716;
+  --raised: #262422;
+  --border: #1f1d1b;
+  --rule: #201e1c;
+  --control: #47433f;
+  --text: #ffffff;
+  --muted: #b7b2ab;
+  --faint: #96918a;
+
+  /* Les états d'une table. Jamais utilisés sur le cadre de l'application. */
+  --free: #86d9a0;
+  --waiting: #e5a93b;
+  --waiting-bg: #2b2414;
+  --served: #8f8a84;
+  --served-bg: #262422;
+  --clear: #5aa9f0;
+  --clear-bg: #14222e;
+  --alert: #ec5b60;
+  --alert-bg: #2c1a1b;
+
+  --radius-card: 20px;
+  --radius-control: 999px;
+  --gap: 14px;
+  --pad: 22px;
+  --gutter: 29px;
+  --control-height: 36px;
+  --sidebar-width: 220px;
+  --topbar-height: 64px;
+  --font: 'Inter Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  color-scheme: dark;
 }
+
 * { box-sizing: border-box; }
+html, body { height: 100%; }
 body {
   margin: 0;
-  background: var(--bg);
+  background: var(--ground);
   color: var(--text);
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  line-height: 1.45;
+  font-family: var(--font);
+  font-size: 14px;
+  line-height: 20px;
+  -webkit-font-smoothing: antialiased;
 }
-h1 { font-size: 1.4rem; margin: 0 0 1rem; }
-h2 { font-size: 1.05rem; margin: 1.5rem 0 0.75rem; }
-button {
+h1 { font-size: 20px; line-height: 28px; font-weight: 600; margin: 0; }
+h2 { font-size: 16px; line-height: 24px; font-weight: 600; margin: 0; }
+p { margin: 0; }
+a { color: inherit; }
+.num { font-variant-numeric: tabular-nums; }
+.muted { color: var(--muted); }
+.faint { color: var(--faint); }
+.small { font-size: 12px; line-height: 16px; }
+.error { color: var(--alert); }
+
+/* Une carte est un pas de luminosité au-dessus du fond : ni bordure ni ombre. */
+.card { background: var(--surface); border-radius: var(--radius-card); padding: var(--pad); }
+.card-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+
+button, .button {
   font: inherit;
+  font-weight: 500;
+  height: var(--control-height);
+  padding: 0 16px;
+  border: 0;
+  border-radius: var(--radius-control);
+  background: var(--raised);
+  color: var(--text);
   cursor: pointer;
-  border: 1px solid var(--border);
-  background: var(--surface);
-  border-radius: 8px;
-  padding: 0.45rem 0.9rem;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-decoration: none;
+  transition: background-color 120ms ease, transform 80ms ease;
 }
-button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
-button:disabled { opacity: 0.55; cursor: default; }
-input {
+button:hover:not(:disabled), .button:hover { background: #33302d; }
+button:active:not(:disabled) { transform: scale(0.98); }
+/* L'action principale est blanche : c'est l'inversion qui la désigne, pas une couleur. */
+button.primary { background: var(--text); color: #000; }
+button.primary:hover:not(:disabled) { background: #e4e1dc; }
+button:disabled { opacity: 0.5; cursor: default; }
+button.quiet { background: transparent; color: var(--muted); padding: 0 10px; }
+button.quiet:hover:not(:disabled) { background: var(--raised); color: var(--text); }
+:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+
+input, select {
   font: inherit;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 0.5rem 0.7rem;
+  height: 40px;
+  color: var(--text);
+  background: var(--ground);
+  border: 1px solid var(--control);
+  border-radius: 10px;
+  padding: 0 12px;
   width: 100%;
 }
-.card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1rem; }
-.muted { color: var(--muted); }
-.error { color: var(--clear-ink); }
+input::placeholder { color: var(--faint); }
+input[type='checkbox'] { width: auto; height: auto; }
+code { font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace; font-size: 13px; background: var(--raised); padding: 1px 6px; border-radius: 4px; }
+
+/* En-tête de page : un nom, puis une phrase sur ce qui se passe. */
+.page-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }
+.page-head p { color: var(--muted); margin-top: 2px; }
+
+/* Pastille d'état : un point de la couleur de l'état, le mot en clair. */
+.dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--served); flex: none; }
+.dot[data-state='EMPTY'] { background: transparent; box-shadow: inset 0 0 0 1.5px var(--free); }
+.dot[data-state='WAITING'] { background: var(--waiting); }
+.dot[data-state='SERVED'] { background: var(--served); }
+.dot[data-state='TO_CLEAR'] { background: var(--clear); }
+.dot[data-state='ALERT'] { background: var(--alert); }
+
+.empty { border: 1px dashed var(--control); border-radius: 10px; padding: 10px 14px; color: var(--muted); }
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}

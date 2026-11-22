@@ -1,0 +1,20 @@
+# Production : --spring.profiles.active=prod
+# Aucune valeur par défaut pour les secrets : le backend refuse de démarrer s'il en manque un.
+spring:
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+
+restovision:
+  jwt:
+    secret: ${JWT_SECRET}
+  mqtt:
+    url: ${MQTT_URL}          # ssl://broker:8883 pour une liaison chiffrée
+    username: ${MQTT_USER}
+    password: ${MQTT_PASSWORD}
+  cors:
+    allowed-origins: ${CORS_ORIGINS}
+  demo:
+    enabled: false
+    history: false

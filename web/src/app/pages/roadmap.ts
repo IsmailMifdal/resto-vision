@@ -1,34 +1,45 @@
 import { Component } from '@angular/core';
 
-/** Fonctionnalités prévues : chaque ligne correspond à un module déjà réservé dans le code. */
+/** Fonctionnalités prévues : ce que le service apportera, et à quelle version. */
 @Component({
   selector: 'app-roadmap',
   template: `
-    <h1>À venir</h1>
-    <div class="list">
-      @for (item of items; track item.title) {
-        <div class="card">
-          <span class="tag">{{ item.version }}</span>
-          <strong>{{ item.title }}</strong>
-          <p class="muted">{{ item.where }}</p>
-        </div>
-      }
+    <div class="page-head">
+      <div>
+        <h1>À venir</h1>
+        <p>Ces fonctions réutilisent les données déjà collectées, sans nouveau matériel.</p>
+      </div>
     </div>
+    <section class="card">
+      <ul>
+        @for (item of items; track item.title) {
+          <li>
+            <div>
+              <strong>{{ item.title }}</strong>
+              <span class="muted">{{ item.what }}</span>
+            </div>
+            <span class="version">{{ item.version }}</span>
+          </li>
+        }
+      </ul>
+    </section>
   `,
   styles: `
-    .list { display: grid; gap: 0.6rem; }
-    .tag { font-size: 0.75rem; padding: 0.1rem 0.5rem; border-radius: 99px; background: var(--served); color: var(--served-ink); margin-right: 0.5rem; }
-    p { margin: 0.3rem 0 0; font-size: 0.85rem; }
+    .card { max-width: 760px; padding: 6px var(--pad); }
+    ul { list-style: none; margin: 0; padding: 0; }
+    li { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 64px; padding: 10px 0; border-top: 1px solid var(--rule); }
+    li:first-child { border-top: 0; }
+    li div { display: grid; }
+    strong { font-weight: 500; }
+    .version { flex: none; white-space: nowrap; height: 22px; padding: 0 9px; border-radius: 11px; background: var(--raised); font-size: 12px; line-height: 22px; font-weight: 500; }
   `,
 })
 export class RoadmapPage {
   readonly items = [
-    { version: 'V2', title: 'Stock synchronisé avec la caisse', where: 'backend : stock/PosConnector' },
-    { version: 'V2', title: 'Anti-gaspillage', where: 'edge : analyzers/plate_waste.py' },
-    { version: 'V2', title: 'Prédiction d’affluence et commande fournisseur', where: 'backend : forecast/ForecastService' },
-    { version: 'V2', title: 'Rapport quotidien généré par IA', where: 'backend : report/DailyReportService' },
-    { version: 'V3', title: 'Alertes vocales', where: 'web : à brancher sur LiveService.alerts' },
-    { version: 'V3', title: 'Hygiène et sécurité', where: 'edge : analyzers/hygiene.py (validation juridique d’abord)' },
-    { version: 'V3', title: 'Comparaison multi-sites', where: 'backend : multisite/GroupComparisonService' },
+    { version: 'V2', title: 'Caisse connectée en direct', what: 'Le stock, aujourd’hui mis à jour par un fichier de ventes, suivra la caisse vente après vente.' },
+    { version: 'V2', title: 'Anti-gaspillage par plat', what: 'Reconnaître chaque assiette et son niveau de remplissage, avec un modèle entraîné sur les images du pilote.' },
+    { version: 'V2', title: 'Prévision avec météo et réservations', what: 'La prévision du lendemain, déjà visible dans Service, affinée par la météo et les réservations.' },
+    { version: 'V2', title: 'Commande ajustée à l’affluence', what: 'Le bon de commande tiendra compte de l’affluence prévue, une fois reliées les ventes de la caisse et la fréquentation vue par les caméras.' },
+    { version: 'V3', title: 'Sol mouillé et hygiène', what: 'Demande un modèle entraîné et une validation juridique : il s’agit de filmer le travail des salariés.' },
   ];
 }

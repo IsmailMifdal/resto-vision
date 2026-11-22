@@ -1,6 +1,10 @@
 # Coeur (suffisant pour le simulateur et les tests)
 paho-mqtt>=2.1
+cryptography>=43   # vérification des mises à jour signées
 pytest>=8.0
-# Vision (nécessaire seulement avec une vraie caméra ou une vidéo)
-ultralytics>=8.3
+# Vision (nécessaire seulement avec une vraie caméra ou une vidéo) : RF-DETR + ByteTrack, Apache 2.0
+rfdetr>=1.12
+trackers>=2.7
 opencv-python-headless>=4.10
+# YOLO d'Ultralytics, seulement pour comparer (model.backend = "yolo") : licence AGPL-3.0,
+# un produit commercial demande une licence Enterprise. À installer à part : pip install ultralytics
