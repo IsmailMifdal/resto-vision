@@ -22,6 +22,8 @@ import shutil
 import tarfile
 from pathlib import Path
 
+from .paths import confined
+
 UPDATE_TOPIC = "restovision/updates"
 RESTART_CODE = 75  # code de sortie : « nouvelle version installée, redémarrer »
 MAX_ARCHIVE_BYTES = 5_000_000
@@ -70,7 +72,7 @@ class VersionStore:
     """Les versions installées sous `root` : versions/<v>/, et les fichiers current, previous, good, bad/<v>."""
 
     def __init__(self, root: str | Path):
-        self.root = Path(root)
+        self.root = confined(root)   # dossier donné en ligne de commande : seulement un dossier autorisé
         (self.root / "versions").mkdir(parents=True, exist_ok=True)
         (self.root / "bad").mkdir(exist_ok=True)
 

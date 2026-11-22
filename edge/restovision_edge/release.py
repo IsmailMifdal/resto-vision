@@ -17,6 +17,7 @@ import json
 import tarfile
 from pathlib import Path
 
+from .paths import confined
 from .updater import MAX_ARCHIVE_BYTES, UPDATE_TOPIC, _declared_version, parse_version, signed_bytes
 
 
@@ -24,6 +25,7 @@ def keygen(out: Path) -> str:
     from cryptography.hazmat.primitives import serialization
     from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
+    out = confined(out)
     out.mkdir(parents=True, exist_ok=True)
     private = Ed25519PrivateKey.generate()
     key_file = out / "restovision-edge.key"
@@ -41,6 +43,7 @@ def build(package: Path, key_file: Path) -> dict:
     """Le manifeste d'une version : le paquet, son empreinte et la signature."""
     from cryptography.hazmat.primitives import serialization
 
+    key_file = confined(key_file)
     version = _declared_version(package / "__init__.py")
     if not version:
         raise SystemExit("__version__ introuvable dans le paquet.")
@@ -87,7 +90,7 @@ def main() -> None:
     gen.add_argument("--out", required=True, type=Path)
     make = commands.add_parser("build", help="signer la version du paquet")
     make.add_argument("--key", required=True, type=Path)
-    make.add_argument("--package", type=Path, default=Path(__file__).parent)
+    make.add_argument("--package", type=Path, help="paquet à signer ; par défaut, celui-ci")
     make.add_argument("--out", required=True, type=Path)
     send = commands.add_parser("publish", help="publier une version sur le broker")
     send.add_argument("--manifest", type=Path, help="manifeste à publier ; absent avec --clear")
@@ -98,13 +101,19 @@ def main() -> None:
     send.add_argument("--password")
     send.add_argument("--tls", action="store_true")
     options = parser.parse_args()
+    try:   # chemins de la ligne de commande : seulement dans les dossiers autorisés (voir paths.py)
+        for name in ("out", "key", "package", "manifest"):
+            if getattr(options, name, None) is not None:
+                setattr(options, name, confined(getattr(options, name)))
+    except ValueError as error:
+        raise SystemExit(str(error)) from error
 
     if options.command == "keygen":
         public = keygen(options.out)
         print(f"Clé privée : {options.out / 'restovision-edge.key'} (à garder hors ligne)")
         print(f'Clé publique, à mettre dans edge.json : "update": {{ "publicKey": "{public}" }}')
     elif options.command == "build":
-        manifest = build(options.package, options.key)
+        manifest = build(options.package or Path(__file__).parent, options.key)
         options.out.write_text(json.dumps(manifest), encoding="utf-8")
         print(f"Version {manifest['version']} signée : {options.out} ({len(manifest['archive']) // 1024} Ko)")
     else:

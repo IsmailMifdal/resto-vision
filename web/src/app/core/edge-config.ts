@@ -41,7 +41,7 @@ export function parseEdgeConfig(text: string): { config: EdgeConfig; zones: Edge
   }
   const { zones, ...config } = raw as { zones?: unknown } & EdgeConfig;
   if (zones !== undefined && !Array.isArray(zones)) throw new Error('Le champ « zones » doit être une liste.');
-  return { config, zones: (zones ?? []).map(readZone) };
+  return { config, zones: (zones ?? []).map((zone, index) => readZone(zone, index)) };
 }
 
 function readZone(raw: unknown, index: number): EdgeZone {

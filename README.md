@@ -119,6 +119,10 @@ python -m restovision_edge.release publish --manifest version.json --host <broke
     --username editeur --password <mot de passe>
 ```
 
+Les chemins donnés à ces outils (et `--update-root`, `--root` du boîtier) doivent être dans le dossier courant,
+le dossier personnel, le dossier temporaire ou `/opt/restovision`. Pour garder la clé ailleurs, par exemple sur une
+clé USB, ajouter ce dossier à la variable `RESTOVISION_ALLOWED_DIRS`.
+
 Sécurité : chaque version est signée (Ed25519) avec une clé privée qui reste chez l'éditeur, hors du serveur. Le
 boîtier ne connaît que la clé publique (`update.publicKey` dans `edge.json`) et refuse un paquet dont la signature
 ou l'empreinte ne correspond pas, une version plus ancienne que la sienne, ou un fichier qui sortirait de son
