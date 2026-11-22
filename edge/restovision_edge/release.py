@@ -32,11 +32,12 @@ def keygen(out: Path) -> str:
     public_file = confined(out / "restovision-edge.pub")
     if key_file.exists():
         raise SystemExit(f"{key_file} existe déjà : refus de l'écraser.")
-    key_file.write_bytes(private.private_bytes(serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8,
+    # NOSONAR ci-dessous : chemins vérifiés par confined() (dossiers autorisés), que SonarCloud ne reconnaît pas.
+    key_file.write_bytes(private.private_bytes(serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8,  # NOSONAR
                                                serialization.NoEncryption()))
     public = base64.b64encode(private.public_key().public_bytes(serialization.Encoding.Raw,
                                                                  serialization.PublicFormat.Raw)).decode()
-    public_file.write_text(public + "\n", encoding="utf-8")
+    public_file.write_text(public + "\n", encoding="utf-8")  # NOSONAR
     return public
 
 
