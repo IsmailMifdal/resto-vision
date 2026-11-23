@@ -1,0 +1,16 @@
+# Dépendances figées de l'image du simulateur (edge/Dockerfile), avec leurs empreintes.
+# pip refuse tout paquet dont la version ou l'empreinte ne correspond pas. Empreintes des roues Linux
+# x86_64 et aarch64, Python 3.12. Pour mettre à jour : télécharger les nouvelles roues avec
+#   pip download --only-binary :all: --platform manylinux_2_34_x86_64 --platform manylinux2014_x86_64 \
+#       --python-version 3.12 "paho-mqtt>=2.1" "cryptography>=43"
+# (puis pareil en aarch64) et recopier ici les versions et les sha256.
+paho-mqtt==2.2.0 \
+    --hash=sha256:3243630f7c2b05f71d1de8c6f59865eb04d3a59ae8c866e92377faed6753db4d
+cryptography==50.0.2 \
+    --hash=sha256:9dab55f57c74c3cad24c323bacbbd04be4705ba6eb0d92e920b1fc4837ed5079 \
+    --hash=sha256:87e9ce85beb6b328ba370cc6e6aea483c92617b4c95b1d33a49297eb662bfb04
+cffi==2.1.1 \
+    --hash=sha256:c1453022f490d2459a11819d83ad1d586e9ff65a12ac3e705ffebd46d3685dcf \
+    --hash=sha256:68e62fe11f30d5ca8289242866f0a5291402d8529ca2178ab8afc5c9694ae890
+pycparser==3.12 \
+    --hash=sha256:a076f3f489b39b43ed13563a1dafe42447445bec2e294154ec5c57fcdda4c85e
