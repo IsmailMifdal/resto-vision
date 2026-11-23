@@ -3,6 +3,11 @@
 Service d'IA branché sur les caméras d'un restaurant ou d'un snack : il suit l'état des tables et la file
 d'attente, et prévient l'équipe quand des clients attendent trop longtemps.
 
+> **🔗 Démo en ligne : [resto-vision.vercel.app](https://resto-vision.vercel.app)**
+> Compte de démonstration : `demo@restovision.local` / `demo1234` (le plan de salle est animé par le simulateur).
+>
+> Réalisé par [Ismail Mifdal](https://ismail-mifdal.vercel.app).
+
 **Principe : la vidéo est analysée sur place. Seuls des événements (texte) partent vers le cloud.**
 
 ```
